@@ -1,0 +1,3 @@
+[submodule "Simple_epi_models"]
+	path = Simple_epi_models
+	url = https://github.com/cmbaker00/Simple_epi_models
