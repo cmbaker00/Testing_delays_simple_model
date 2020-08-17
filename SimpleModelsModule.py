@@ -85,6 +85,8 @@ class TestOptimisation:
                  pre_test_probability=(.4, .04, .004),
                  onward_transmission=(3, 4, 2, .5),
                  routine_capacity=5000,
+                 priority_capacity_proportion=.1,
+                 priority_queue=True,
                  routine_tat=1,
                  tat_at_fifty_percent_surge=2
                  ):
@@ -94,17 +96,28 @@ class TestOptimisation:
         self.pre_test_by_indication = pre_test_probability
 
         self.routine_capacity = routine_capacity
+        self.priority_capacity = routine_capacity*priority_capacity_proportion
+        self.priority_queue = priority_queue
+
         self.routine_tat = routine_tat
         self.tat_surge = tat_at_fifty_percent_surge
 
-    def turn_around_time(self, tests):
-        return self.function_turn_around_time()(tests)
+        if not 0 < priority_capacity_proportion < 1:
+            raise ValueError(f'Priority capacity proportion must be between '
+                             f'0 and 1. The input value was '
+                             f'{priority_capacity_proportion}.')
+
+    def turn_around_time(self, tests, priority_queue=False):
+        return self.function_turn_around_time(priority_queue)(tests)
 
     @lru_cache()
-    def function_turn_around_time(self):
+    def function_turn_around_time(self, priority_queue=False):
         routine_capacity = self.routine_capacity
         tat = self.routine_tat
-        tat_surge = self.tat_surge
+        if priority_queue:
+            tat_surge = tat
+        else:
+            tat_surge = self.tat_surge
         return lambda x: tat if x < routine_capacity else tat + (tat_surge-tat)*((x-routine_capacity)**2)/((routine_capacity*.5)**2)
 
     @lru_cache()
@@ -212,9 +225,30 @@ class TestOptimisation:
         return num_tests_by_group
 
     def estimate_total_tranmission(self, test_allocation,
-                                   result_delay = 1, swab_delay = 1):
+                                   result_delay=1, swab_delay=1):
+
+
         pop_per_group = self.create_population_groups()
         pop_untested = pop_per_group - test_allocation
+
+        priority_tat = self.turn_around_time(tests=1)
+        if self.priority_queue:
+            total_tests = np.sum(test_allocation)
+            num_priority_tests = min([total_tests, self.priority_capacity])
+            test_allocation_priority = self.allocate_tests(num_tests=int(num_priority_tests),
+                                                           result_delay=priority_tat,
+                                                           swab_delay=swab_delay)
+        else:
+            test_allocation_priority = np.zeros(test_allocation.shape)
+
+        test_allocation -= test_allocation_priority
+        test_allocation[test_allocation<0] = 0
+
+        exp_transmission_priority_test = self.create_expected_transmission_tested_array(
+            result_delay=priority_tat,
+            swab_delay=swab_delay
+        )
+
         exp_transmission_test = self.create_expected_transmission_tested_array(
             result_delay=result_delay,
             swab_delay=swab_delay
@@ -226,40 +260,57 @@ class TestOptimisation:
 
         untested_transmission = np.sum(pop_untested*exp_transmission_notest)
         tested_transmission = np.sum(test_allocation*exp_transmission_test)
-        return tested_transmission + untested_transmission
+        priority_tested_transmission = np.sum(test_allocation_priority*exp_transmission_priority_test)
+        return tested_transmission + untested_transmission + priority_tested_transmission
 
-    def estimate_transmission_with_testing(self, num_test, swab_delay=1):
-        tat = self.turn_around_time(num_test)
+    def estimate_transmission_with_testing(self, num_test, swab_delay=1, priority_queue=False):
+        tat = self.turn_around_time(num_test) #todo: remove priority queue from turn_around_time?
         test_allocation = self.allocate_tests(num_tests=num_test,
                             result_delay=tat, swab_delay=swab_delay)
         return self.estimate_total_tranmission(test_allocation,
                                         result_delay=tat, swab_delay=swab_delay)
 
-    def plot_transmission_with_testing(self, swab_delay=1):
-        num_test_array = range(self.routine_capacity*2+1)
+
+    def generate_onward_transmission_with_tests(self, swab_delay=1):
+        num_test_array = range(self.routine_capacity*2)
         transmission = []
         for num_tests in num_test_array:
             transmission.append(self.estimate_transmission_with_testing(
-                num_test=num_tests, swab_delay=swab_delay
+                num_test=num_tests, swab_delay=swab_delay, priority_queue=self.priority_queue
             ))
         transmission = np.array(transmission)/\
                        np.sum(np.array(self.population) * np.array(self.pre_test_by_indication))
-        plt.plot(num_test_array, transmission)
+        return num_test_array, transmission
+
+
+    def plot_transmission_with_testing(self, swab_delay=1):
+        plt.plot(*self.generate_onward_transmission_with_tests(
+            swab_delay=swab_delay))
         plt.xlabel('Number of tests')
         plt.ylabel('Average onward transmission')
-        plt.title(f'Test capacity = {self.routine_capacity}')
-        plt.savefig(f'Test_capacity_{self.routine_capacity}.png')
+        if self.priority_queue:
+            plt.title(f'Test capacity = {self.routine_capacity}'
+                      f', with priority testing')
+            plt.savefig(f'Test_capacity_{self.routine_capacity}'
+                        f'_priority_testing.png')
+        else:
+            plt.title(f'Test capacity = {self.routine_capacity}')
+            plt.savefig(f'Test_capacity_{self.routine_capacity}.png')
         plt.show()
 
 if __name__ == "__main__":
-    test_optim = TestOptimisation()
-    test_optim.create_onward_transmission_array()
-    # test_optim.plot_benefit_as_function_delay(swab_delay=1)
-    print(test_optim.benefit_of_test(0))
-    allocation = test_optim.allocate_tests(10000)
-    print(test_optim.estimate_transmission_with_testing(0))
-    test_optim.plot_transmission_with_testing()
+    # test_optim = TestOptimisation(priority_queue=True)
+    # TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000, 1)
+    # # test_optim.create_onward_transmission_array()
+    # # test_optim.plot_benefit_as_function_delay(swab_delay=1)
+    # # print(test_optim.benefit_of_test(0))
+    # # allocation = test_optim.allocate_tests(10000)
+    # # print(test_optim.estimate_transmission_with_testing(0))
+    # test_optim.plot_transmission_with_testing()
 
+
+    TestOptimisation(priority_queue=False).plot_transmission_with_testing()
+    TestOptimisation(priority_queue=True).plot_transmission_with_testing()
 
     # testing_delay = InfectionDelay(pop_structure='uniform')
     # print(np.mean(testing_delay.population))
