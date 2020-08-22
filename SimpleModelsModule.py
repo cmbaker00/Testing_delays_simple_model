@@ -270,7 +270,7 @@ class TestOptimisation:
         return self.estimate_total_tranmission(test_allocation,
                                         result_delay=tat, swab_delay=swab_delay)
 
-
+    @lru_cache()
     def generate_onward_transmission_with_tests(self, swab_delay=1):
         num_test_array = range(self.routine_capacity*2)
         transmission = []
@@ -284,8 +284,7 @@ class TestOptimisation:
 
 
     def plot_transmission_with_testing(self, swab_delay=1):
-        plt.plot(*self.generate_onward_transmission_with_tests(
-            swab_delay=swab_delay))
+        plt.plot(*self.generate_onward_transmission_with_tests(swab_delay=swab_delay))
         plt.xlabel('Number of tests')
         plt.ylabel('Average onward transmission')
         if self.priority_queue:
@@ -298,6 +297,14 @@ class TestOptimisation:
             plt.savefig(f'Test_capacity_{self.routine_capacity}.png')
         plt.show()
 
+    def optimal_test_amount(self):
+        num_test_array, transmission = self.generate_onward_transmission_with_tests()
+        opt_test = num_test_array[np.where(transmission == min(transmission))[0][0]] #todo not sure what would happen if there were two values at the min
+        # if len(opt_test) > 1:
+        #     opt_test = opt_test[0]
+        num_tests_by_group = self.allocate_tests(num_tests=opt_test)
+        return num_tests_by_group, num_test_array #todo maybe just print num_test_array or something, with catagories named.
+
 if __name__ == "__main__":
     # test_optim = TestOptimisation(priority_queue=True)
     # TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000, 1)
@@ -308,9 +315,10 @@ if __name__ == "__main__":
     # # print(test_optim.estimate_transmission_with_testing(0))
     # test_optim.plot_transmission_with_testing()
 
-
-    TestOptimisation(priority_queue=False).plot_transmission_with_testing()
-    TestOptimisation(priority_queue=True).plot_transmission_with_testing()
+    test_optim = TestOptimisation(priority_queue=True)
+    # TestOptimisation(priority_queue=False).plot_transmission_with_testing()
+    # test_optim.plot_transmission_with_testing()
+    tests, test_array = test_optim.optimal_test_amount()
 
     # testing_delay = InfectionDelay(pop_structure='uniform')
     # print(np.mean(testing_delay.population))
