@@ -303,7 +303,8 @@ class TestOptimisation:
         # if len(opt_test) > 1:
         #     opt_test = opt_test[0]
         num_tests_by_group = self.allocate_tests(num_tests=opt_test)
-        return num_tests_by_group, num_test_array #todo maybe just print num_test_array or something, with catagories named.
+        tests_by_indication = np.sum(num_tests_by_group, axis=0)
+        return opt_test, tests_by_indication, num_tests_by_group
 
 if __name__ == "__main__":
     # test_optim = TestOptimisation(priority_queue=True)
