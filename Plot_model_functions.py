@@ -1,4 +1,4 @@
-from PythonAnalysis.OptimalTestingAllocation import TestOptimisation
+from SimpleModelsModule import TestOptimisation
 import matplotlib.pyplot as plt
 import numpy as np
 

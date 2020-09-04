@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from PythonAnalysis.OptimalTestingAllocation import TestOptimisation
-from PythonAnalysis.Report_plots import make_onward_transmission_vector, make_population_tuple
-import PythonAnalysis.ReportScenarios as scenarios
+from SimpleModelsModule import TestOptimisation
+from Plot_all_scenarios import make_onward_transmission_vector, make_population_tuple
+import Scenario_parameter_values as scenarios
 
 def sample_onward_transmission(onwards_dict):
     close_contact = np.random.uniform(*onwards_dict['close_contact'])
