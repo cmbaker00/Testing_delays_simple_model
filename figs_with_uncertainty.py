@@ -101,7 +101,8 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
     # plt.plot(test_array, low_ci)
     # plt.plot(test_array, up_ci)
     plt.xlabel('Tests per 1000')
-    plt.ylabel('Percentage reduction in transmission')
+    plt.ylim((65, 100))
+    plt.ylabel('Percentage of onwards transmission')
     if plot_title:
         plt.title(plot_title)
     plt.savefig(f'Figures_uncertainty/{scenario_name}.png')

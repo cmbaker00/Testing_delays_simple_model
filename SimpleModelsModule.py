@@ -422,7 +422,7 @@ class TestOptimisation:
         fig, ax1 = plt.subplots()
 
         ax1.set_xlabel('Tests per 1000 people')
-        ax1.set_ylabel('Percentage reduction in transmission')
+        ax1.set_ylabel('Percentage of onwards transmission')
         ax1.plot(test_array, onward_transmission)
 
         ax2 = ax1.twinx()
