@@ -370,7 +370,7 @@ class TestOptimisation:
         return total_transmission, percent_positive
 
     @lru_cache()
-    def generate_onward_transmission_with_tests(self, max_tests_proportion=2.):
+    def generate_onward_transmission_with_tests(self, max_tests_proportion=3.):
         num_test_array = range(1, int(self.routine_capacity * max_tests_proportion))
         transmission = []
         positivity = []
@@ -439,6 +439,37 @@ class TestOptimisation:
             tests_by_indication = [int(i) for i in np.sum(num_tests_by_group, axis=0)]
             return opt_test, tests_by_indication, num_tests_by_group
 
+    def optimal_test_uncertain(self, uncertainty_range_prop):
+        num_tests, exp_transmission = self.create_uncertain_onward_array(uncertainty_range_prop)
+        min_index = np.where(np.min(exp_transmission) == exp_transmission)[0][0]
+        opt_tests = num_tests[min_index]
+        return opt_tests
+
+    def plot_uncertaint_tests(self, uncertainty_range_prop):
+        num_tests, exp_transmission = self.create_uncertain_onward_array(uncertainty_range_prop)
+
+        num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
+
+        plt.plot(num_tests, exp_transmission)
+        plt.plot(num_test_array, transmission)
+
+
+    @lru_cache()
+    def create_uncertain_onward_array(self, uncertainty_range_prop):
+        num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
+        num_test_array = np.array(num_test_array)
+        num_test_uncertainty_array = []
+        expected_transmission = []
+        for n_tests in num_test_array:
+            min_tests = int(n_tests*(1 - uncertainty_range_prop))
+            max_tests = int(n_tests*(1 + uncertainty_range_prop))
+            if (min_tests > 0) and max_tests < max(num_test_array):
+                test_range = (min_tests <= num_test_array) & (max_tests >= num_test_array)
+                num_test_uncertainty_array.append(n_tests)
+                expected_transmission.append(np.mean(transmission[test_range]))
+        return tuple(num_test_uncertainty_array), tuple(expected_transmission)
+
+
     def make_plot_transmission_perc_post(self, max_test_proportion=3):
         expected_cases = sum(
             [pop * prob for pop, prob in zip(self.population, self.pre_test_by_indication)])
@@ -480,6 +511,9 @@ if __name__ == "__main__":
     # test_optim.plot_transmission_with_testing()
 
     test_optim = TestOptimisation(priority_queue=True)
+    test_optim.optimal_test_uncertain(uncertainty_range_prop=.1)
+    test_optim.plot_uncertaint_tests(.1)
+    plt.show()
     # TestOptimisation(priority_queue=False).plot_transmission_with_testing()
     # test_optim.plot_transmission_with_testing()
     # tests, test_array = test_optim.optimal_test_amount()
