@@ -5,6 +5,7 @@ from Simple_epi_models.ODE_Models import SIR_model_R0
 import pandas as pd
 from functools import lru_cache
 from scipy.interpolate import interp2d
+import timeit
 
 
 class InfectionDelay:
@@ -358,6 +359,7 @@ class TestOptimisation:
         priority_tested_transmission = np.sum(test_allocation_priority * exp_transmission_priority_test)
         return tested_transmission + untested_transmission + priority_tested_transmission
 
+    @lru_cache()
     def estimate_transmission_with_testing(self, num_test):
         tat = self.turn_around_time(num_test)  # todo: remove priority queue from turn_around_time?
         test_allocation = self.allocate_tests(num_tests=num_test,
@@ -402,7 +404,7 @@ class TestOptimisation:
             plt.savefig(f'{title.replace(" ", "_")}.png')
         plt.show()
 
-    def optimal_test_amount(self):
+    def optimal_test_amount_array(self):
         num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
         opt_test = num_test_array[np.where(transmission == min(transmission))[0][
             0]]  # todo not sure what would happen if there were two values at the min
@@ -412,15 +414,30 @@ class TestOptimisation:
         tests_by_indication = [int(i) for i in np.sum(num_tests_by_group, axis=0)]
         return opt_test, tests_by_indication, num_tests_by_group
 
-    def optimal_test_amount_2(self):
-        num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
-        opt_test = num_test_array[np.where(transmission == min(transmission))[0][
-            0]]  # todo not sure what would happen if there were two values at the min
-        # if len(opt_test) > 1:
-        #     opt_test = opt_test[0]
-        num_tests_by_group = self.allocate_tests(num_tests=opt_test).astype(int)
-        tests_by_indication = [int(i) for i in np.sum(num_tests_by_group, axis=0)]
-        return opt_test, tests_by_indication, num_tests_by_group
+    def optimal_test_amount(self):
+        if self.generate_onward_transmission_with_tests.cache_info().currsize > 0:
+            return self.optimal_test_amount_array()
+        else:
+            min_optimal_tests = self.routine_capacity
+            c_tests = min_optimal_tests
+            c_transmission = np.inf
+            c_positivity = None
+            opt_test = None
+            opt_found_flag = False
+            while opt_found_flag is False:
+                new_onward_transmission, new_percent_positive = \
+                    self.estimate_transmission_with_testing(num_test=c_tests)
+                if new_onward_transmission > c_transmission:
+                    opt_test = c_tests
+                    opt_found_flag = True
+                else:
+                    c_transmission = new_onward_transmission
+                    c_positivity = new_percent_positive
+                c_tests += 1
+
+            num_tests_by_group = self.allocate_tests(num_tests=opt_test).astype(int)
+            tests_by_indication = [int(i) for i in np.sum(num_tests_by_group, axis=0)]
+            return opt_test, tests_by_indication, num_tests_by_group
 
     def make_plot_transmission_perc_post(self, max_test_proportion=3):
         expected_cases = sum(
