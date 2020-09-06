@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import copy
+# from copy import copy
 from Simple_epi_models.ODE_Models import SIR_model_R0
 import pandas as pd
 from functools import lru_cache
@@ -31,7 +31,7 @@ class InfectionDelay:
             return np.random.geometric(p, self.pop_size) - 1
         if self.pop_structure == 'poisson':
             return np.random.poisson(self.average_number_infections,
-                                     size = self.pop_size)
+                                     size=self.pop_size)
         raise ValueError('Population structure "{}" not implemented'.
                          format(self.pop_structure))
 
@@ -53,11 +53,11 @@ class InfectionDelay:
     def population_attack_rate(self, lag=None, max_infections=np.inf):
         if lag is None:
             lag = self.total_infectious
-        percent_reduction = lag/self.total_infectious
+        percent_reduction = lag / self.total_infectious
         new_popolation = self.population
         if max_infections < np.inf:
             new_popolation[new_popolation > max_infections] = max_infections
-        new_popolation = new_popolation*percent_reduction
+        new_popolation = new_popolation * percent_reduction
 
         r0 = self.calculate_r0(new_popolation)
         return self.calc_attack_rate(r0)
@@ -99,7 +99,7 @@ class TestOptimisation:
         self.pre_test_by_indication = pre_test_probability
 
         self.routine_capacity = routine_capacity
-        self.priority_capacity = routine_capacity*priority_capacity_proportion
+        self.priority_capacity = routine_capacity * priority_capacity_proportion
         self.priority_queue = priority_queue
 
         self.routine_tat = routine_tat
@@ -118,22 +118,22 @@ class TestOptimisation:
 
     def set_population_by_input_number_infections(self, num_infections):
         cc, s, a = self.population
-        close_contacts = num_infections*sum(self.onward_transmission)
+        close_contacts = num_infections * sum(self.onward_transmission)
         net_close = cc - close_contacts
-        net_sympt = s*net_close/(s+a)
-        net_asympt = a*net_close/(s+a)
+        net_sympt = s * net_close / (s + a)
+        net_asympt = a * net_close / (s + a)
 
         symptomatic = s + net_sympt
         asymptomatic = a + net_asympt
 
         cc_prob, symp_prob, asymp_prob = self.pre_test_by_indication
-        exp_close_contact_cases = close_contacts*cc_prob
+        exp_close_contact_cases = close_contacts * cc_prob
 
         remaining_cases = num_infections - exp_close_contact_cases
-        exp_remaining_cases = symptomatic*symp_prob + asymptomatic*asymp_prob
+        exp_remaining_cases = symptomatic * symp_prob + asymptomatic * asymp_prob
 
-        scaling = remaining_cases/exp_remaining_cases
-        symp_prob, asymp_prob = np.array([symp_prob, asymp_prob])*scaling
+        scaling = remaining_cases / exp_remaining_cases
+        symp_prob, asymp_prob = np.array([symp_prob, asymp_prob]) * scaling
 
         self.population = (close_contacts, symptomatic, asymptomatic)
         # self.pre_test_by_indication = (cc_prob, symp_prob, asymp_prob)
@@ -142,21 +142,24 @@ class TestOptimisation:
         return self.function_turn_around_time(priority_queue)(tests)
 
     def plot_turn_around_time(self, title=None):
-        tests = np.arange(self.routine_capacity*2)
+        tests = np.arange(self.routine_capacity * 2)
         tat = []
         for test in tests:
             tat.append(self.turn_around_time(test, False))
         plt.plot(tests, tat)
         plt.xlabel('Number of tests')
         plt.ylabel('Average turn around time')
+        plt.title(title)
 
     def plot_delay_effect_on_transmission(self, max_delay=5):
         delay_array = np.linspace(0, max_delay, 1000)
         transmission_reduction = []
         for delay in delay_array:
-            transmission_reduction.append(100*
-                (1-self.test_delay_effect_on_percent_future_infections(delay,
-                                                                       swab_delay=self.swab_delay)))
+            red = 100 * (1 -
+                         self.test_delay_effect_on_percent_future_infections(
+                             delay,
+                             swab_delay=self.swab_delay))
+            transmission_reduction.append(red)
         plt.plot(delay_array, transmission_reduction)
         plt.xlabel('Result delay')
         plt.ylabel('Onward transmission %')
@@ -169,22 +172,24 @@ class TestOptimisation:
             tat_surge = tat
         else:
             tat_surge = self.tat_surge
-        return lambda x: tat if x < routine_capacity else tat + (tat_surge-tat)*((x-routine_capacity)**2)/((routine_capacity*.5)**2)
+        return lambda x: tat if x < routine_capacity else \
+            tat + (tat_surge - tat) * ((x - routine_capacity) ** 2) / \
+            ((routine_capacity * .5) ** 2)
 
     @lru_cache()
     def load_test_delay_data(self):
         data = pd.read_csv('testing_delay_kretzhcmar_table_2.csv')
-        x = np.arange(0,11)
-        y = np.arange(0,8)
+        x = np.arange(0, 11)
+        y = np.arange(0, 8)
         z = np.zeros([len(y), len(x)])
         z[:, :4] = np.array(data)[:, 1:5]
         z[:, -1] = np.array(data)[:, -1]
 
-        rate_decline = z[:,3]/z[:,2]
-        for i in range(4,10):
-            z[:, i] = z[:, i-1]*rate_decline
+        rate_decline = z[:, 3] / z[:, 2]
+        for i in range(4, 10):
+            z[:, i] = z[:, i - 1] * rate_decline
         for i in range(z.shape[0]):
-            z[i,z[i,:]<z[i,-1]] = z[i,-1]
+            z[i, z[i, :] < z[i, -1]] = z[i, -1]
         return interp2d(x, y, z)
 
     def test_delay_effect_on_percent_future_infections(self, result_delay=2., swab_delay=1.):
@@ -201,7 +206,7 @@ class TestOptimisation:
     def create_onward_transmission_array(self):
         onward_transmission_dimension = self.get_dimension_of_input_onward_transmission_array()
         if onward_transmission_dimension == 0:
-            self.onward_transmission = [self.onward_transmission]*4
+            self.onward_transmission = [self.onward_transmission] * 4
         if onward_transmission_dimension <= 1:
             array = np.zeros([4, 3])
             for i in range(3):
@@ -233,42 +238,42 @@ class TestOptimisation:
         array = np.zeros([4, 3])
         dim_onward_transmission = self.get_dimension_of_input_onward_transmission_array()
         if dim_onward_transmission <= 1:
-            relative_transmission = np.array([i/sum(self.onward_transmission) for i in self.onward_transmission])
+            relative_transmission = np.array([i / sum(self.onward_transmission) for i in self.onward_transmission])
             for i in range(3):
-                array[:, i] = self.population[i]*relative_transmission
+                array[:, i] = self.population[i] * relative_transmission
         else:
             onward_array = np.array(self.onward_transmission)
             col_sums = np.sum(onward_array, axis=0)
-            col_sums_array = np.array([list(col_sums)]*4)
-            relative_transmission = onward_array/col_sums_array
-            population_array = np.array([list(self.population)]*4)
-            array = relative_transmission*population_array
+            col_sums_array = np.array([list(col_sums)] * 4)
+            relative_transmission = onward_array / col_sums_array
+            population_array = np.array([list(self.population)] * 4)
+            array = relative_transmission * population_array
         return array
 
     def create_expected_onward_transmission_array(self):
         onward = self.create_onward_transmission_array()
         prob = self.create_pre_test_proabability_array()
-        return onward*prob
+        return onward * prob
 
     def create_transmission_tested_array(self, result_delay=2, swab_delay=1):
         onward = self.create_onward_transmission_array()
         transmission_reduction = self.test_delay_effect_on_percent_future_infections(
             result_delay=result_delay, swab_delay=swab_delay)
-        return onward*(1-transmission_reduction)
+        return onward * (1 - transmission_reduction)
 
     def create_expected_transmission_tested_array(self, result_delay=2, swab_delay=1):
         onward = self.create_transmission_tested_array(
             result_delay=result_delay, swab_delay=swab_delay)
 
         prob = self.create_pre_test_proabability_array()
-        return onward*prob
+        return onward * prob
 
     def benefit_of_test(self, result_delay):
         # expected_trans = self.create_expected_onward_transmission_array()
         expected_trans = self.create_expected_transmission_tested_array(
             result_delay=np.inf, swab_delay=7)
         expected_tested_trans = self.create_expected_transmission_tested_array(
-            result_delay=result_delay, swab_delay=self.swab_delay)*.9999
+            result_delay=result_delay, swab_delay=self.swab_delay) * .9999
         return expected_trans - expected_tested_trans
         # expected_onward_infection = self.
 
@@ -318,7 +323,7 @@ class TestOptimisation:
                 num_tests_by_group[max_benefit_location] = pop_per_group[max_benefit_location]
             else:
                 num_tests_by_group[max_benefit_location] = pop_per_group[max_benefit_location] * \
-                                                           tests_remaining/total_pop_in_best_groups
+                                                           tests_remaining / total_pop_in_best_groups
             tests_remaining -= total_pop_in_best_groups
             benefit_array[max_benefit_location] = -1
         return num_tests_by_group
@@ -348,23 +353,23 @@ class TestOptimisation:
         exp_transmission_notest = self.create_expected_transmission_tested_array(
             result_delay=np.inf, swab_delay=7)
 
-        untested_transmission = np.sum(pop_untested*exp_transmission_notest)
-        tested_transmission = np.sum(test_allocation*exp_transmission_test)
-        priority_tested_transmission = np.sum(test_allocation_priority*exp_transmission_priority_test)
+        untested_transmission = np.sum(pop_untested * exp_transmission_notest)
+        tested_transmission = np.sum(test_allocation * exp_transmission_test)
+        priority_tested_transmission = np.sum(test_allocation_priority * exp_transmission_priority_test)
         return tested_transmission + untested_transmission + priority_tested_transmission
 
     def estimate_transmission_with_testing(self, num_test):
-        tat = self.turn_around_time(num_test) #todo: remove priority queue from turn_around_time?
+        tat = self.turn_around_time(num_test)  # todo: remove priority queue from turn_around_time?
         test_allocation = self.allocate_tests(num_tests=num_test,
                                               result_delay=tat)
-        percent_positive = sum(np.array(self.pre_test_by_indication)*np.sum(test_allocation,0))/num_test
+        percent_positive = sum(np.array(self.pre_test_by_indication) * np.sum(test_allocation, 0)) / num_test
         total_transmission = self.estimate_total_tranmission(test_allocation,
-                                               result_delay=tat)
+                                                             result_delay=tat)
         return total_transmission, percent_positive
 
     @lru_cache()
     def generate_onward_transmission_with_tests(self, max_tests_proportion=2.):
-        num_test_array = range(1, int(self.routine_capacity*max_tests_proportion))
+        num_test_array = range(1, int(self.routine_capacity * max_tests_proportion))
         transmission = []
         positivity = []
         for num_tests in num_test_array:
@@ -372,8 +377,8 @@ class TestOptimisation:
                 self.estimate_transmission_with_testing(num_test=num_tests)
             transmission.append(current_onward_transmission)
             positivity.append(current_positive_percentage)
-        transmission = np.array(transmission)#/\
-                       #np.sum(np.array(self.population) * np.array(self.pre_test_by_indication))
+        transmission = np.array(transmission)  # /\
+        # np.sum(np.array(self.population) * np.array(self.pre_test_by_indication))
         positivity = np.array(positivity)
         return num_test_array, transmission, positivity
 
@@ -394,12 +399,23 @@ class TestOptimisation:
                 plt.savefig(f'Test_capacity_{self.routine_capacity}.png')
         else:
             plt.title(title)
-            plt.savefig(f'{title.replace(" ","_")}.png')
+            plt.savefig(f'{title.replace(" ", "_")}.png')
         plt.show()
 
     def optimal_test_amount(self):
         num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
-        opt_test = num_test_array[np.where(transmission == min(transmission))[0][0]] #todo not sure what would happen if there were two values at the min
+        opt_test = num_test_array[np.where(transmission == min(transmission))[0][
+            0]]  # todo not sure what would happen if there were two values at the min
+        # if len(opt_test) > 1:
+        #     opt_test = opt_test[0]
+        num_tests_by_group = self.allocate_tests(num_tests=opt_test).astype(int)
+        tests_by_indication = [int(i) for i in np.sum(num_tests_by_group, axis=0)]
+        return opt_test, tests_by_indication, num_tests_by_group
+
+    def optimal_test_amount_2(self):
+        num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
+        opt_test = num_test_array[np.where(transmission == min(transmission))[0][
+            0]]  # todo not sure what would happen if there were two values at the min
         # if len(opt_test) > 1:
         #     opt_test = opt_test[0]
         num_tests_by_group = self.allocate_tests(num_tests=opt_test).astype(int)
@@ -409,14 +425,15 @@ class TestOptimisation:
     def make_plot_transmission_perc_post(self, max_test_proportion=3):
         expected_cases = sum(
             [pop * prob for pop, prob in zip(self.population, self.pre_test_by_indication)])
-        expected_cases = np.round(expected_cases,1)
+        expected_cases = np.round(expected_cases, 1)
         # print(f"Expected cases = "
         #       f"{expected_cases}"
         #       )
         # optim_object.plot_transmission_with_testing('Community transmission 2', max_prop_tests=3)
         test_array, onward_transmission, positivity = self.generate_onward_transmission_with_tests(
             max_tests_proportion=max_test_proportion)
-        onward_transmission = 100 * onward_transmission / max(onward_transmission) #max onward transmission shouldn not depend on symp perc.
+        onward_transmission = 100 * onward_transmission / max(
+            onward_transmission)  # max onward transmission shouldn not depend on symp perc.
         test_array = np.array(test_array) / 100
 
         fig, ax1 = plt.subplots()
@@ -448,7 +465,7 @@ if __name__ == "__main__":
     test_optim = TestOptimisation(priority_queue=True)
     # TestOptimisation(priority_queue=False).plot_transmission_with_testing()
     # test_optim.plot_transmission_with_testing()
-    tests, test_array = test_optim.optimal_test_amount()
+    # tests, test_array = test_optim.optimal_test_amount()
 
     # testing_delay = InfectionDelay(pop_structure='uniform')
     # print(np.mean(testing_delay.population))
