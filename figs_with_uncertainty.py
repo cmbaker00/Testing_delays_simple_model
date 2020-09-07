@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from SimpleModelsModule import TestOptimisation
 from Plot_all_scenarios import make_onward_transmission_vector, make_population_tuple
-import Scenario_parameter_values as scenarios
+import Scenario_parameter_values as scenario
 
 def sample_onward_transmission(onwards_dict):
     close_contact = np.random.uniform(*onwards_dict['close_contact'])
@@ -135,16 +135,16 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
 #                        reps=100,
 #                        scenario_name='uncertainty_test')
 #
-cc_on, symp_on, asymp_on = scenarios.onward_transmission_high
-cc_prob, symp_prob, asymp_prob = scenarios.test_prob_high
-cc_pop, symp_pop = scenarios.pop_high
-total_pop = scenarios.total_population
+cc_on, symp_on, asymp_on = scenario.onward_transmission_high
+cc_prob, symp_prob, asymp_prob = scenario.test_prob_high
+cc_pop, symp_pop = scenario.pop_high
+total_pop = scenario.total_population
 
 
-cc_on_outbreak, symp_on_outbreak, asymp_on_outbreak = scenarios.onward_transmission_low
-cc_prob_outbreak, symp_prob_outbreak, asymp_prob_outbreak = scenarios.test_prob_low
-cc_pop_outbreak, symp_pop_outbreak = scenarios.pop_low
-total_pop_outbreak = scenarios.total_population
+cc_on_outbreak, symp_on_outbreak, asymp_on_outbreak = scenario.onward_transmission_low
+cc_prob_outbreak, symp_prob_outbreak, asymp_prob_outbreak = scenario.test_prob_low
+cc_pop_outbreak, symp_pop_outbreak = scenario.pop_low
+total_pop_outbreak = scenario.total_population
 
 # # NO VARIATION TEMPLATE START
 # priority_queue = True
@@ -172,10 +172,11 @@ total_pop_outbreak = scenarios.total_population
 #                        plot_title=None)
 # # NO VARIATION TEMPLATE END
 
-run_symp_presentation_range = True
+run_symp_presentation_range = False
 run_pre_test_prob_range = False
 run_pop_distribution_range = False
 run_onward_transmission_range = False
+run_test_number_uncertainty = True
 
 if run_symp_presentation_range:
     priority_queue = True
@@ -192,7 +193,7 @@ if run_symp_presentation_range:
     prop_symp_range = [.25, .75]
 
 
-    cap_range = [scenarios.test_capacity_high]
+    cap_range = [scenario.test_capacity_high]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -203,7 +204,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_community_transmission_capacity_high',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[0])
+                           test_order=scenario.priority_order[0])
 
 
     run_analysis_save_plot(priority=priority_queue,
@@ -215,10 +216,10 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_community_transmission_capacity_high_symp_priority',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[1])
+                           test_order=scenario.priority_order[1])
 
 
-    cap_range = [scenarios.test_capacity_low]
+    cap_range = [scenario.test_capacity_low]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -229,7 +230,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_community_transmission_capacity_low',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[0])
+                           test_order=scenario.priority_order[0])
 
 
     run_analysis_save_plot(priority=priority_queue,
@@ -241,7 +242,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_community_transmission_capacity_low_symp_priority',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[1])
+                           test_order=scenario.priority_order[1])
 
     priority_queue = True
     onward_transmission_range = {'close_contact': [cc_on_outbreak],
@@ -256,7 +257,7 @@ if run_symp_presentation_range:
 
     prop_symp_range = [.25, .75]
 
-    cap_range = [scenarios.test_capacity_high]
+    cap_range = [scenario.test_capacity_high]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -267,7 +268,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_outbreak_response_capacity_high',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[0])
+                           test_order=scenario.priority_order[0])
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -278,9 +279,9 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_outbreak_response_capacity_high_symp_priority',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[1])
+                           test_order=scenario.priority_order[1])
 
-    cap_range = [scenarios.test_capacity_low]
+    cap_range = [scenario.test_capacity_low]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -291,7 +292,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_outbreak_response_capacity_low',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[0])
+                           test_order=scenario.priority_order[0])
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -302,7 +303,7 @@ if run_symp_presentation_range:
                            reps=100,
                            scenario_name='presenting_prop_range_25_75_outbreak_response_capacity_low_symp_priority',
                            plot_title='Presenting proportion between 25% and 75%',
-                           test_order=scenarios.priority_order[1])
+                           test_order=scenario.priority_order[1])
 
 if run_onward_transmission_range:
     priority_queue = True
@@ -317,7 +318,7 @@ if run_onward_transmission_range:
                                  'asymptomatic': [asymp_prob]}
 
     prop_symp_range = [.5]
-    cap_range = [scenarios.test_capacity_high]
+    cap_range = [scenario.test_capacity_high]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -342,7 +343,7 @@ if run_pop_distribution_range:
                                  'asymptomatic': [asymp_prob]}
 
     prop_symp_range = [.5]
-    cap_range = [scenarios.test_capacity_high]
+    cap_range = [scenario.test_capacity_high]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -368,7 +369,7 @@ if run_pre_test_prob_range:
                                  'asymptomatic': [asymp_prob*.8, asymp_prob*1.2]}
 
     prop_symp_range = [.5]
-    cap_range = [scenarios.test_capacity_high]
+    cap_range = [scenario.test_capacity_high]
 
     run_analysis_save_plot(priority=priority_queue,
                            onward_transmission=onward_transmission_range,
@@ -379,3 +380,80 @@ if run_pre_test_prob_range:
                            reps=100,
                            scenario_name='test_prob_uncertainty',
                            plot_title='Pre-test probability of positive +/- 20%')
+
+if run_test_number_uncertainty:
+    priority = True
+
+    total_population = scenario.total_population
+
+    # High prevelance
+    onward_transmission_vector_high = \
+        make_onward_transmission_vector(*scenario.onward_transmission_high)
+
+    test_prob_high = scenario.test_prob_high
+
+    population_high, cases_high = \
+        make_population_tuple(num_close=scenario.pop_high[0],
+                              num_symp=scenario.pop_high[1],
+                              total_pop=total_population,
+                              presenting_proporition=1,
+                              probability_by_indication=test_prob_high)
+
+    test_optim = TestOptimisation(priority_queue=priority,
+                                  onward_transmission=onward_transmission_vector_high,
+                                  population=population_high,
+                                  pre_test_probability=test_prob_high,
+                                  routine_capacity=400,
+                                  symptomatic_testing_proportion=1,
+                                  test_prioritsation_by_indication=None)
+
+    value_gap = .01
+    uncertainty_range_values = [0] + \
+                               list(np.arange(0,.5,value_gap) +
+                                    value_gap)
+    num_tests_list = []
+    transmission_list = []
+
+    max_num_tests_for_plot = np.inf
+
+    for uncertainty_value in uncertainty_range_values:
+        print(f"Running uncertainy value {uncertainty_value}")
+        if uncertainty_value == 0:
+            num_test_array, transmission, positivity = test_optim.generate_onward_transmission_with_tests()
+            num_tests_list.append(np.array(num_test_array))
+            transmission_list.append(np.array(transmission))
+        else:
+            num_tests, exp_transmission = test_optim.create_uncertain_onward_array(uncertainty_range_prop=
+                                                                                   uncertainty_value)
+            num_tests = np.array(num_tests)
+
+            exp_transmission = np.array(exp_transmission)
+            exp_transmission = exp_transmission/max(exp_transmission)
+
+            num_tests_list.append(num_tests)
+            transmission_list.append(exp_transmission)
+
+            if max(num_tests) < max_num_tests_for_plot:
+                max_num_tests_for_plot = max(num_tests)
+    plot_tests = []
+    plot_transmission = []
+    for current_tests, current_exp_transmission in zip(num_tests_list, transmission_list):
+        index_values = current_tests <= max_num_tests_for_plot
+        # current_tests = current_tests[index_values]
+        # current_exp_transmission = current_exp_transmission[index_values]
+        plt_tests_values = current_tests[index_values]/100
+        plt_transmission_values = current_exp_transmission[index_values]/\
+                                  max(current_exp_transmission[index_values])
+        plot_tests.append(plt_tests_values)
+        plot_transmission.append(plt_transmission_values)
+        plt.plot(plt_tests_values, plt_transmission_values,
+                 color=[0, 0, 0],
+                 alpha=.2)
+
+
+    plt.xlabel('Tests per 1000')
+    plt.ylabel('Percentage of onwards transmission')
+    plt.savefig('Figures_uncertainty/test_number_uncertainty.png')
+    plt.show()
+
+

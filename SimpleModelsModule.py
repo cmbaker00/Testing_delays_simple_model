@@ -449,6 +449,16 @@ class TestOptimisation:
         num_tests, exp_transmission = self.create_uncertain_onward_array(uncertainty_range_prop)
 
         num_test_array, transmission, positivity = self.generate_onward_transmission_with_tests()
+        num_test_array = np.array(num_test_array)
+
+        # scale to be a percentage
+        exp_transmission = exp_transmission / max(exp_transmission)
+        transmission = transmission/max(transmission)
+
+        # make the non-uncertain array the same size.
+        elements_to_keep = num_test_array <= max(num_tests)
+        num_test_array = num_test_array[elements_to_keep]
+        transmission = transmission[elements_to_keep]
 
         plt.plot(num_tests, exp_transmission)
         plt.plot(num_test_array, transmission)
