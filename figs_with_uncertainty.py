@@ -173,10 +173,10 @@ total_pop_outbreak = scenario.total_population
 # # NO VARIATION TEMPLATE END
 
 run_symp_presentation_range = False
-run_pre_test_prob_range = False
-run_pop_distribution_range = False
-run_onward_transmission_range = False
-run_test_number_uncertainty = True
+run_pre_test_prob_range = True
+run_pop_distribution_range = True
+run_onward_transmission_range = True
+run_test_number_uncertainty = False
 
 if run_symp_presentation_range:
     priority_queue = True

@@ -58,7 +58,7 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
             plt.text(rc * 1.04, 55, 'Routine capacity', rotation=270)
 
             plt.xlabel('Tests per 1000 people')
-            plt.ylabel('Percentage reduction in transmission')
+            plt.ylabel('Percentage of onwards transmission')
             plt.savefig(f'Onward_transmission_and_postivity_basic_figures/{scenario_name}_test_prop_{prop_symp}_cap_{int(cap / 100)}'
                         f'{priority_string}{priority_order_string}_onward_only.png')
             plt.show()
