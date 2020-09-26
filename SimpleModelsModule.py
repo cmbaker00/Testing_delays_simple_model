@@ -7,6 +7,10 @@ from functools import lru_cache
 from scipy.interpolate import interp2d
 import timeit
 
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
+
 
 class InfectionDelay:
     def __init__(self, average_number_infections=2.53,
@@ -509,8 +513,57 @@ class TestOptimisation:
         plt.tight_layout()
         return ax1, onward_transmission, positivity, expected_cases, test_array
 
+class TestEquivalence:
+    def __init__(self, population=100000,
+                 pre_test_probability=0.02,
+                 tat=1,
+                 swab_delay=1,
+                 sensitivity=.9,
+                 specificity=.99
+                 ):
+        self.population = population
+        self.pre_test_probability = pre_test_probability
+        self.tat = tat
+        self.swab_delay = swab_delay
+        self.sensitivity = sensitivity
+        self.specificity = specificity
+
+    # @lru_cache()
+    def get_onward_infection_function_reduction(self):
+        return TestOptimisation().test_delay_effect_on_percent_future_infections(
+            swab_delay=self.swab_delay,
+            result_delay=self.tat)
+
+    def expected_reduction(self, num_tests=1):
+        max_reduction = self.get_onward_infection_function_reduction()
+        return max_reduction*self.sensitivity
+
 
 if __name__ == "__main__":
+    print(TestEquivalence(sensitivity=0).expected_reduction())
+    print(TestEquivalence(sensitivity=.5).expected_reduction())
+    print(TestEquivalence(sensitivity=.9).expected_reduction())
+    print(TestEquivalence(sensitivity=1).expected_reduction())
+    print(TestEquivalence(sensitivity=1, tat=5).expected_reduction())
+    tat_values = np.linspace(0,3)
+    sensitivity_values = np.linspace(0.5, 1)
+    val_array = []
+    for tat in tat_values:
+        val_sens = []
+        for sens in sensitivity_values:
+            val_sens.append(TestEquivalence(sensitivity=sens, tat=tat).expected_reduction()[0])
+        val_array.append(np.array(val_sens))
+    tat_array = np.tile(tat_values, (len(tat_values),1))
+    sensitivity_array = np.transpose(np.tile(sensitivity_values, (len(sensitivity_values), 1)))
+    val_array = np.array(val_array)
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    surf = ax.plot_surface(sensitivity_array,
+                           tat_array,
+                           val_array)
+                           # , cmap=cm.coolwarm,
+                           # linewidth=0, antialiased=False)
+
     # test_optim = TestOptimisation(priority_queue=True)
     # TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000, 1)
     # # test_optim.create_onward_transmission_array()
@@ -520,10 +573,10 @@ if __name__ == "__main__":
     # # print(test_optim.estimate_transmission_with_testing(0))
     # test_optim.plot_transmission_with_testing()
 
-    test_optim = TestOptimisation(priority_queue=True)
-    test_optim.optimal_test_uncertain(uncertainty_range_prop=.1)
-    test_optim.plot_uncertaint_tests(.1)
-    plt.show()
+    # test_optim = TestOptimisation(priority_queue=True)
+    # test_optim.optimal_test_uncertain(uncertainty_range_prop=.1)
+    # test_optim.plot_uncertaint_tests(.1)
+    # plt.show()
     # TestOptimisation(priority_queue=False).plot_transmission_with_testing()
     # test_optim.plot_transmission_with_testing()
     # tests, test_array = test_optim.optimal_test_amount()
@@ -533,3 +586,4 @@ if __name__ == "__main__":
     # print(testing_delay.pop_attack_vary_delay(min_lag=0))
     # plt.plot(testing_delay.pop_attack_vary_delay(min_lag=0))
     # plt.show()
+    pass
