@@ -553,16 +553,24 @@ if __name__ == "__main__":
         for sens in sensitivity_values:
             val_sens.append(TestEquivalence(sensitivity=sens, tat=tat).expected_reduction()[0])
         val_array.append(np.array(val_sens))
-    tat_array = np.tile(tat_values, (len(tat_values),1))
-    sensitivity_array = np.transpose(np.tile(sensitivity_values, (len(sensitivity_values), 1)))
+    tat_array = np.transpose(np.tile(tat_values, (len(tat_values),1)))
+    sensitivity_array = np.tile(sensitivity_values, (len(sensitivity_values), 1))
     val_array = np.array(val_array)
+
+    equiv_array = np.max(val_array)/val_array
     fig = plt.figure()
     ax = fig.gca(projection='3d')
+    # ax.view_init(elev=20., azim=150)
     surf = ax.plot_surface(sensitivity_array,
                            tat_array,
-                           val_array)
+                           equiv_array)
                            # , cmap=cm.coolwarm,
                            # linewidth=0, antialiased=False)
+    plt.xlabel('Sensitivity')
+    plt.ylabel('Turn around time (days)')
+    plt.title('Test equivalence')
+    plt.savefig('Test_equivalence_init.png')
+    plt.show()
 
     # test_optim = TestOptimisation(priority_queue=True)
     # TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000, 1)
