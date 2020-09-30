@@ -558,6 +558,13 @@ if __name__ == "__main__":
     val_array = np.array(val_array)
 
     equiv_array = np.max(val_array)/val_array
+
+    from scipy.interpolate import interp2d
+
+    equiv_interp = interp2d(sensitivity_array, tat_array, equiv_array)
+    equiv_table = equiv_interp([.5,.6,.7,.8,.9,1],[0,1,2])
+    equiv_table = equiv_interp([1,.5],[0,1,2])
+
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     # ax.view_init(elev=20., azim=150)
