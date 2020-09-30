@@ -6,10 +6,21 @@ from itertools import count
 
 def population_split(total_prevalance, relative_likelihood_in_high_prob_proportion):
     ## ASSUMING THE 'HIGH' GROUP IS 10,000 PEOPLE AND LOW IS 90,000
+    if type(total_prevalance) is list:
+        high_list, low_list = [], []
+        for current_prev in total_prevalance:
+            high, low = population_split_calculation(current_prev, relative_likelihood_in_high_prob_proportion)
+            high_list.append(high)
+            low_list.append(low)
+        return high_list, low_list
+    else:
+        return population_split_calculation(total_prevalance, relative_likelihood_in_high_prob_proportion)
+
+def population_split_calculation(total_prevalance, relative_likelihood_in_high_prob_proportion):
     p = total_prevalance
     q = relative_likelihood_in_high_prob_proportion
     high_number = p*q/(9+q)
-    low_number = total_prevalance - high_number
+    low_number = p - high_number
     return high_number, low_number
 
 def plot_pr_detect(prevalance_per_100k=1,
@@ -49,7 +60,7 @@ def plot_pr_detect(prevalance_per_100k=1,
                          **days_of_no_transmission_threshold
                          for tests in tests_per_k_per_day_range]
 
-            pr_detect_90k = [1-binom.cdf(0,(1 - high_prev_testing_proportion)*tests*1000,
+            pr_detect_90k = [1-binom.cdf(0, (1 - high_prev_testing_proportion)*tests*1000,
                                      num_in_90k/90000)
                          **days_of_no_transmission_threshold
                          for tests in tests_per_k_per_day_range]
@@ -60,11 +71,21 @@ def plot_pr_detect(prevalance_per_100k=1,
             if r0 is None:
                 raise ValueError("Must input R0")
             prevalance_per_100k = list(prevalance_per_100k)
-            pr_detect = [1-np.prod([binom.cdf(0 ,tests*1000,
-                                              current_prev/100000)
+            num_in_10k_list, num_in_90k_list = population_split(prevalance_per_100k, high_prev_pop_rel_likelihood)
+            pr_detect_10k = [1-np.prod([binom.cdf(0 ,high_prev_testing_proportion*tests*1000,
+                                              current_prev/10000)
                                   for current_prev
-                                  in prevalance_per_100k])
+                                  in num_in_10k_list])
                          for tests in tests_per_k_per_day_range]
+
+            pr_detect_90k = [1-np.prod([binom.cdf(0 ,(1 - high_prev_testing_proportion)*1000,
+                                              current_prev/90000)
+                                  for current_prev
+                                  in num_in_90k_list])
+                         for tests in tests_per_k_per_day_range]
+
+            pr_detect = [1 - (1 - pr_10k) * (1 - pr_90k) for pr_10k, pr_90k in zip(pr_detect_10k, pr_detect_90k)]
+
             days_of_no_transmission_threshold = len(prevalance_per_100k)
 
     plt.plot(tests_per_k_per_day_range, pr_detect, 'o')
@@ -110,14 +131,23 @@ if __name__ == '__main__':
     create_single_figures = False
     create_multi_panel_figures = False
 
+    fig, axs = plt.subplots(2,1)
+    plt.axes(axs[0])
     plot_pr_detect_increasing(prevalance_per_100k=1,
                               days_of_no_transmission_threshold=14,
                               target_prob=0.8,
                               max_tests=16,
-                              r0=1,
+                              r0=1.5,
                               include_plot_labelling=True,
                               high_prev_pop_rel_likelihood=5,
-                              high_prev_testing_proportion=.666)
+                              high_prev_testing_proportion=2/3)
+    plt.axes(axs[1])
+    plot_pr_detect_increasing(prevalance_per_100k=1,
+                              days_of_no_transmission_threshold=14,
+                              target_prob=0.8,
+                              max_tests=16,
+                              r0=1.5,
+                              include_plot_labelling=True)
     plt.show()
 
 
