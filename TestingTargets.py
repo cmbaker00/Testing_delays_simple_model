@@ -4,32 +4,68 @@ import matplotlib.pyplot as plt
 from scipy.stats import binom
 from itertools import count
 
+def population_split(total_prevalance, relative_likelihood_in_high_prob_proportion):
+    ## ASSUMING THE 'HIGH' GROUP IS 10,000 PEOPLE AND LOW IS 90,000
+    p = total_prevalance
+    q = relative_likelihood_in_high_prob_proportion
+    high_number = p*q/(9+q)
+    low_number = total_prevalance - high_number
+    return high_number, low_number
 
 def plot_pr_detect(prevalance_per_100k=1,
                    days_of_no_transmission_threshold=28,
                    target_prob=0.8,
                    max_tests=16,
                    r0=None,
-                   include_plot_labelling=True):
+                   include_plot_labelling=True,
+                   high_prev_pop_rel_likelihood=1,
+                   high_prev_testing_proportion=.1):
 
     tests_per_k_per_day_range = range(max_tests + 1)
 
-    try:
-        prevalance_per_100k = float(prevalance_per_100k)
-        pr_detect = [1-binom.cdf(0,tests*1000,
-                                 prevalance_per_100k/100000)
-                     **days_of_no_transmission_threshold
-                     for tests in tests_per_k_per_day_range]
-    except TypeError:
-        if r0 is None:
-            raise ValueError("Must input R0")
-        prevalance_per_100k = list(prevalance_per_100k)
-        pr_detect = [1-np.prod([binom.cdf(0 ,tests*1000,
-                                          current_prev/100000)
-                              for current_prev
-                              in prevalance_per_100k])
-                     for tests in tests_per_k_per_day_range]
-        days_of_no_transmission_threshold = len(prevalance_per_100k)
+    if high_prev_pop_rel_likelihood == 1:
+        try:
+            prevalance_per_100k = float(prevalance_per_100k)
+            pr_detect = [1-binom.cdf(0,tests*1000,
+                                     prevalance_per_100k/100000)
+                         **days_of_no_transmission_threshold
+                         for tests in tests_per_k_per_day_range]
+        except TypeError:
+            if r0 is None:
+                raise ValueError("Must input R0")
+            prevalance_per_100k = list(prevalance_per_100k)
+            pr_detect = [1-np.prod([binom.cdf(0 ,tests*1000,
+                                              current_prev/100000)
+                                  for current_prev
+                                  in prevalance_per_100k])
+                         for tests in tests_per_k_per_day_range]
+            days_of_no_transmission_threshold = len(prevalance_per_100k)
+    else:
+        try:
+            prevalance_per_100k = float(prevalance_per_100k)
+            num_in_10k, num_in_90k = population_split(prevalance_per_100k, high_prev_pop_rel_likelihood)
+            pr_detect_10k = [1-binom.cdf(0,high_prev_testing_proportion*tests*1000,
+                                     num_in_10k/10000)
+                         **days_of_no_transmission_threshold
+                         for tests in tests_per_k_per_day_range]
+
+            pr_detect_90k = [1-binom.cdf(0,(1 - high_prev_testing_proportion)*tests*1000,
+                                     num_in_90k/90000)
+                         **days_of_no_transmission_threshold
+                         for tests in tests_per_k_per_day_range]
+
+            pr_detect = [1 - (1 - pr_10k)*(1 - pr_90k) for pr_10k, pr_90k in zip(pr_detect_10k, pr_detect_90k)]
+
+        except TypeError:
+            if r0 is None:
+                raise ValueError("Must input R0")
+            prevalance_per_100k = list(prevalance_per_100k)
+            pr_detect = [1-np.prod([binom.cdf(0 ,tests*1000,
+                                              current_prev/100000)
+                                  for current_prev
+                                  in prevalance_per_100k])
+                         for tests in tests_per_k_per_day_range]
+            days_of_no_transmission_threshold = len(prevalance_per_100k)
 
     plt.plot(tests_per_k_per_day_range, pr_detect, 'o')
     if target_prob:
@@ -45,14 +81,18 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                               max_tests=16,
                               r0=1,
                               serial_interval=5,
-                              include_plot_labelling=True):
+                              include_plot_labelling=True,
+                              high_prev_pop_rel_likelihood=1,
+                              high_prev_testing_proportion=.1):
     if r0 == 1:
         plot_pr_detect(prevalance_per_100k=prevalance_per_100k,
                        days_of_no_transmission_threshold=days_of_no_transmission_threshold,
                        target_prob=target_prob,
                        max_tests=max_tests,
                        r0=None,
-                       include_plot_labelling=include_plot_labelling)
+                       include_plot_labelling=include_plot_labelling,
+                       high_prev_pop_rel_likelihood=high_prev_pop_rel_likelihood,
+                       high_prev_testing_proportion=high_prev_testing_proportion)
     else:
         daily_multiplier = r0**(1/serial_interval)
         prev_list = [prevalance_per_100k*(daily_multiplier**day) for day in range(days_of_no_transmission_threshold)]
@@ -61,11 +101,26 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                        target_prob=target_prob,
                        max_tests=max_tests,
                        r0=r0,
-                       include_plot_labelling=include_plot_labelling)
+                       include_plot_labelling=include_plot_labelling,
+                       high_prev_pop_rel_likelihood=high_prev_pop_rel_likelihood,
+                       high_prev_testing_proportion=high_prev_testing_proportion)
+
 
 if __name__ == '__main__':
     create_single_figures = False
-    create_multi_panel_figures = True
+    create_multi_panel_figures = False
+
+    plot_pr_detect_increasing(prevalance_per_100k=1,
+                              days_of_no_transmission_threshold=14,
+                              target_prob=0.8,
+                              max_tests=16,
+                              r0=1,
+                              include_plot_labelling=True,
+                              high_prev_pop_rel_likelihood=5,
+                              high_prev_testing_proportion=.666)
+    plt.show()
+
+
 
     prev_list = [0.5, 1, 2]
     days_list = [14, 28]
