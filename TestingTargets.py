@@ -35,23 +35,6 @@ def plot_pr_detect(prevalance_per_100k=1,
     plt.xlabel('Tests per 1000 per day')
     plt.ylabel('Probability of detecting transmission')
     plt.ylim([0, 1])
-    if type(prevalance_per_100k) is list:
-        plt.title(f"Probability of detecting transmission "
-                  f"with\n initial prevalence {prevalance_per_100k[0]} and\n"
-                  f"Reff={r0}"
-                  f" per 100k within {days_of_no_transmission_threshold} days")
-        plt.savefig(f"Prob_detect_figures/detect_{prevalance_per_100k[0]}"
-                    f"_r0_{r0}"
-                    f"_per_100k_in{days_of_no_transmission_threshold}_days.png")
-        plt.close()
-    else:
-        plt.title(f"Probability of detecting transmission "
-                  f"with\nprevalence {prevalance_per_100k}"
-                  f" per 100k within {days_of_no_transmission_threshold} days")
-        plt.savefig(f"Prob_detect_figures/detect_{prevalance_per_100k}"
-                    f"_per_100k_in{days_of_no_transmission_threshold}_days.png")
-    # plt.show()
-        plt.close()
 
 def plot_pr_detect_increasing(prevalance_per_100k=1,
                               days_of_no_transmission_threshold=28,
@@ -88,3 +71,20 @@ for prev in prev_list:
                            target_prob=0.8,
                            max_tests=16,
                            r0=r0)
+
+            if r0 == 1:
+                plt.title(f"Probability of detecting transmission "
+                          f"with\nprevalence {prev}"
+                          f" per 100k within {day} days")
+                plt.savefig(f"Prob_detect_figures/detect_{prev}"
+                            f"_per_100k_in{day}_days.png")
+            else:
+                plt.title(f"Probability of detecting transmission "
+                          f"with\n initial prevalence {prev} and\n"
+                          f"Reff={r0}"
+                          f" per 100k within {day} days")
+                plt.savefig(f"Prob_detect_figures/detect_{prev}"
+                            f"_r0_{r0}"
+                            f"_per_100k_in{day}_days.png")
+            # plt.show()
+            plt.close()
