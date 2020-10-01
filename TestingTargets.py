@@ -23,6 +23,32 @@ def population_split_calculation(total_prevalance, relative_likelihood_in_high_p
     low_number = p - high_number
     return high_number, low_number
 
+
+def plot_pr_detect_vary_test(prevalance_per_100k=1,
+                             target_prob=0.8,
+                             tests = 4,
+                             max_consecutive_days=28,
+                             include_plot_labelling=True,
+                             high_prev_pop_rel_likelihood=1,
+                             high_prev_testing_proportion=.1):
+    if high_prev_pop_rel_likelihood == 1:
+        prevalance_per_100k = float(prevalance_per_100k)
+        days_range = range(1, max_consecutive_days+1)
+        pr_detect = [1-binom.cdf(0,tests*1000,
+                                     prevalance_per_100k/100000)
+                         **days
+                         for days in days_range]
+    else:
+        raise ValueError(f'stratified population has not been implemented')
+
+    plt.plot(days_range, pr_detect, 'o')
+    if target_prob:
+        plt.plot([0, max_consecutive_days], [target_prob]*2, '--')
+    if include_plot_labelling:
+        plt.xlabel('Tests per 1000 per day')
+        plt.ylabel('Probability of detecting transmission')
+    plt.ylim([0, 1])
+
 def plot_pr_detect(prevalance_per_100k=1,
                    days_of_no_transmission_threshold=28,
                    target_prob=0.8,
@@ -129,15 +155,15 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
 
 if __name__ == '__main__':
     create_single_figures = False
-    create_multi_panel_figures = False
-    create_multi_panel_figures_with_stratified_testing = False
+    create_multi_panel_figures = True
+    create_multi_panel_figures_with_stratified_testing = True
 
     fig, axs = plt.subplots(2,1)
     plt.axes(axs[0])
     plot_pr_detect_increasing(prevalance_per_100k=1,
                               days_of_no_transmission_threshold=14,
                               target_prob=0.8,
-                              max_tests=16,
+                              max_tests=10,
                               r0=1.5,
                               include_plot_labelling=True,
                               high_prev_pop_rel_likelihood=5,
@@ -146,11 +172,13 @@ if __name__ == '__main__':
     plot_pr_detect_increasing(prevalance_per_100k=1,
                               days_of_no_transmission_threshold=14,
                               target_prob=0.8,
-                              max_tests=16,
+                              max_tests=10,
                               r0=1.5,
                               include_plot_labelling=True)
+
+    plt.xticks(list(range(0,11,2)))
     plt.show()
-    # plt.close()
+    plt.close()
 
     prev_list = [0.5, 1, 2]
     days_list = [14, 28]
@@ -177,6 +205,7 @@ if __name__ == '__main__':
                                            include_plot_labelling=False,
                                            high_prev_pop_rel_likelihood=high_prev_like,
                                            high_prev_testing_proportion=high_prev_test)
+                            plt.xticks(list(range(0,max_tests+1,2)))
 
                             if prev_index+1 == len(prev_list):
                                 plt.xlabel('Tests per 1,000 per day')
@@ -204,6 +233,8 @@ if __name__ == '__main__':
                                    max_tests=max_tests,
                                    r0=r0,
                                    include_plot_labelling=False)
+                    plt.xticks(list(range(0,max_tests+1,2)))
+
                     if prev_index+1 == len(prev_list):
                         plt.xlabel('Tests per 1,000 per day')
                     if (prev_index) == int(len(prev_list)/2) and day_index == 0:
