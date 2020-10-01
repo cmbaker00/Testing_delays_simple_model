@@ -130,6 +130,7 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
 if __name__ == '__main__':
     create_single_figures = False
     create_multi_panel_figures = False
+    create_multi_panel_figures_with_stratified_testing = False
 
     fig, axs = plt.subplots(2,1)
     plt.axes(axs[0])
@@ -149,14 +150,48 @@ if __name__ == '__main__':
                               r0=1.5,
                               include_plot_labelling=True)
     plt.show()
-
-
+    # plt.close()
 
     prev_list = [0.5, 1, 2]
     days_list = [14, 28]
     target_prob = 0.8
-    max_tests = 10.
+    max_tests = 10
     reff_list = [1, 1.1, 1.5]
+
+    high_prev_likelihood_list = [5, 10]
+    high_prev_test_prop_list = [1/3, 1/2, 2/3]
+
+    if create_multi_panel_figures_with_stratified_testing:
+        for r0 in reff_list:
+            for high_prev_like in high_prev_likelihood_list:
+                for high_prev_test in high_prev_test_prop_list:
+                    fig, ax = plt.subplots(len(prev_list), len(days_list))
+                    for prev, prev_index in zip(prev_list, count()):
+                        for day, day_index in zip(days_list, count()):
+                            plt.axes(ax[prev_index, day_index])
+                            plot_pr_detect_increasing(prevalance_per_100k=prev,
+                                           days_of_no_transmission_threshold=day,
+                                           target_prob=0.8,
+                                           max_tests=max_tests,
+                                           r0=r0,
+                                           include_plot_labelling=False,
+                                           high_prev_pop_rel_likelihood=high_prev_like,
+                                           high_prev_testing_proportion=high_prev_test)
+
+                            if prev_index+1 == len(prev_list):
+                                plt.xlabel('Tests per 1,000 per day')
+                            if (prev_index) == int(len(prev_list)/2) and day_index == 0:
+                                plt.ylabel('Probability of detection')
+                            if prev_index == 0:
+                                plt.title(f'Detection within {day} days')
+                            plt.text(10, 0.1, f'{prev} per 100k')
+
+                    plt.savefig(f'Prob_detect_figures/multi_r{r0}_'
+                                f'high_prev_like{high_prev_like}_test_prop{high_prev_test}.png')
+                    plt.close()
+
+
+
     if create_multi_panel_figures:
         for r0 in reff_list:
             fig, ax = plt.subplots(len(prev_list), len(days_list))
@@ -166,7 +201,7 @@ if __name__ == '__main__':
                     plot_pr_detect_increasing(prevalance_per_100k=prev,
                                    days_of_no_transmission_threshold=day,
                                    target_prob=0.8,
-                                   max_tests=16,
+                                   max_tests=max_tests,
                                    r0=r0,
                                    include_plot_labelling=False)
                     if prev_index+1 == len(prev_list):
