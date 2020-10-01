@@ -45,8 +45,8 @@ def plot_pr_detect_vary_test(prevalance_per_100k=1,
     if target_prob:
         plt.plot([0, max_consecutive_days], [target_prob]*2, '--')
     if include_plot_labelling:
-        plt.xlabel('Tests per 1000 per day')
-        plt.ylabel('Probability of detecting transmission')
+        plt.xlabel('Consecutive days of no detected transmission')
+        # plt.ylabel('Probability of detecting transmission')
     plt.ylim([0, 1])
 
 def plot_pr_detect(prevalance_per_100k=1,
@@ -127,7 +127,7 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                               target_prob=0.8,
                               max_tests=16,
                               r0=1,
-                              serial_interval=5,
+                              serial_interval=4.7,
                               include_plot_labelling=True,
                               high_prev_pop_rel_likelihood=1,
                               high_prev_testing_proportion=.1):
@@ -155,28 +155,17 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
 
 if __name__ == '__main__':
     create_single_figures = False
-    create_multi_panel_figures = True
-    create_multi_panel_figures_with_stratified_testing = True
+    create_multi_panel_figures = False
+    create_multi_panel_figures_with_stratified_testing = False
 
     fig, axs = plt.subplots(2,1)
     plt.axes(axs[0])
-    plot_pr_detect_increasing(prevalance_per_100k=1,
-                              days_of_no_transmission_threshold=14,
-                              target_prob=0.8,
-                              max_tests=10,
-                              r0=1.5,
-                              include_plot_labelling=True,
-                              high_prev_pop_rel_likelihood=5,
-                              high_prev_testing_proportion=2/3)
+    plot_pr_detect_vary_test(tests=4, prevalance_per_100k=2)
+    plt.title('Prevalence = 2/100k')
     plt.axes(axs[1])
-    plot_pr_detect_increasing(prevalance_per_100k=1,
-                              days_of_no_transmission_threshold=14,
-                              target_prob=0.8,
-                              max_tests=10,
-                              r0=1.5,
-                              include_plot_labelling=True)
-
-    plt.xticks(list(range(0,11,2)))
+    plot_pr_detect_vary_test(tests=4, prevalance_per_100k=1)
+    plt.title('Prevalence = 1/100k')
+    plt.savefig('Prob_detect_figures/Consecutive_testing_test_fig.png')
     plt.show()
     plt.close()
 
@@ -213,7 +202,7 @@ if __name__ == '__main__':
                                 plt.ylabel('Probability of detection')
                             if prev_index == 0:
                                 plt.title(f'Detection within {day} days')
-                            plt.text(10, 0.1, f'{prev} per 100k')
+                            plt.text(6, 0.1, f'{prev} per 100k')
 
                     plt.savefig(f'Prob_detect_figures/multi_r{r0}_'
                                 f'high_prev_like{high_prev_like}_test_prop{high_prev_test}.png')
@@ -241,7 +230,7 @@ if __name__ == '__main__':
                         plt.ylabel('Probability of detection')
                     if prev_index == 0:
                         plt.title(f'Detection within {day} days')
-                    plt.text(10, 0.1, f'{prev} per 100k')
+                    plt.text(6, 0.1, f'{prev} per 100k')
             plt.savefig(f'Prob_detect_figures/multi_r{r0}.png')
             plt.close()
 
