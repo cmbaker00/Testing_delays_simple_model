@@ -121,7 +121,7 @@ def plot_pr_detect(prevalance_per_100k=1,
                                   in num_in_10k_list])
                          for tests in tests_per_k_per_day_range]
 
-            pr_detect_90k = [1-np.prod([binom.cdf(0 ,(1 - high_prev_testing_proportion)*1000,
+            pr_detect_90k = [1-np.prod([binom.cdf(0 ,(1 - high_prev_testing_proportion)*tests*1000,
                                               current_prev/90000)
                                   for current_prev
                                   in num_in_90k_list])
@@ -176,10 +176,39 @@ def simple_exponential_growth(initial_population=1, r_eff=1.5, num_days=28, gene
     prev_list = [initial_population * (daily_multiplier ** day) for day in range(num_days)]
     return prev_list
 
+
+def calc_probabilities(prevalence_per_100k=1,
+                       days_of_no_transmission_threshold=28,
+                       num_tests=4,
+                       r0=1,
+                       generation_interval=4.7,
+                       high_prev_pop_rel_likelihood=1,
+                       high_prev_testing_proportion=.1):
+
+        prevalance_per_100k = simple_exponential_growth(initial_population=prevalence_per_100k,
+                                              r_eff=r0,
+                                              num_days=days_of_no_transmission_threshold,
+                                              generation_interval=generation_interval)
+
+        prevalance_per_100k = list(prevalance_per_100k)
+        num_in_10k_list, num_in_90k_list = population_split(prevalance_per_100k, high_prev_pop_rel_likelihood)
+        pr_detect_10k = np.prod([binom.cdf(0, high_prev_testing_proportion * num_tests * 1000,
+                                                current_prev / 10000)
+                                      for current_prev
+                                      in num_in_10k_list])
+
+        pr_detect_90k = 1 - np.prod([binom.cdf(0, (1 - high_prev_testing_proportion) * num_tests * 1000,
+                                                current_prev / 90000)
+                                      for current_prev
+                                      in num_in_90k_list])
+
+        pr_detect = [1 - (1 - pr_10k) * (1 - pr_90k) for pr_10k, pr_90k in zip(pr_detect_10k, pr_detect_90k)]
+
+
 if __name__ == '__main__':
     create_single_figures = False
     create_multi_panel_figures = False
-    create_multi_panel_figures_with_stratified_testing = False
+    create_multi_panel_figures_with_stratified_testing = True
     create_multi_panel_time_to_detection_figures = False
 
     # fig, axs = plt.subplots(2,1)
