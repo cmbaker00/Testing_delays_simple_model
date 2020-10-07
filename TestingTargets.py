@@ -30,18 +30,35 @@ def plot_pr_detect_vary_test(prevalance_per_100k=1,
                              max_consecutive_days=28,
                              include_plot_labelling=True,
                              high_prev_pop_rel_likelihood=1,
-                             high_prev_testing_proportion=.1):
+                             high_prev_testing_proportion=.1,
+                             r0=None):
     if high_prev_pop_rel_likelihood == 1:
-        prevalance_per_100k = float(prevalance_per_100k)
-        days_range = range(1, max_consecutive_days+1)
-        pr_detect = [1-binom.cdf(0,tests*1000,
-                                     prevalance_per_100k/100000)
-                         **days
+        if r0 is None:
+            prevalance_per_100k = float(prevalance_per_100k)
+            days_range = range(1, max_consecutive_days+1)
+            pr_detect = [1-binom.cdf(0, tests*1000,
+                                     prevalance_per_100k/100000)**days
                          for days in days_range]
+
+        else:
+            # prevalance_per_100k = simple_exponential_growth(initial_population=prevalance_per_100k,
+            #                           r_eff=r0,
+            #                           num_days=max_consecutive_days)
+            days_range = range(1, max_consecutive_days+1)
+
+            pr_detect = [1-np.prod([binom.cdf(0, tests*1000, current_prev/100000)
+                                    for current_prev in simple_exponential_growth(
+                    initial_population=prevalance_per_100k,
+                    num_days=days,
+                    r_eff=r0)])
+                         for days in days_range]
+            # days_of_no_transmission_threshold = len(prevalance_per_100k)
+
     else:
         raise ValueError(f'stratified population has not been implemented')
 
-    plt.plot(days_range, pr_detect, 'o')
+    plt.plot(days_range, pr_detect, '-', linewidth=4)
+    plt.xticks(list(range(0,max_consecutive_days+1,7)))
     if target_prob:
         plt.plot([0, max_consecutive_days], [target_prob]*2, '--')
     if include_plot_labelling:
@@ -127,7 +144,7 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                               target_prob=0.8,
                               max_tests=16,
                               r0=1,
-                              serial_interval=4.7,
+                              generation_interval=4.7,
                               include_plot_labelling=True,
                               high_prev_pop_rel_likelihood=1,
                               high_prev_testing_proportion=.1):
@@ -141,8 +158,10 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                        high_prev_pop_rel_likelihood=high_prev_pop_rel_likelihood,
                        high_prev_testing_proportion=high_prev_testing_proportion)
     else:
-        daily_multiplier = r0**(1/serial_interval)
-        prev_list = [prevalance_per_100k*(daily_multiplier**day) for day in range(days_of_no_transmission_threshold)]
+        prev_list = simple_exponential_growth(initial_population=prevalance_per_100k,
+                                              r_eff=r0,
+                                              num_days=days_of_no_transmission_threshold,
+                                              generation_interval=generation_interval)
         plot_pr_detect(prevalance_per_100k=prev_list,
                        days_of_no_transmission_threshold=days_of_no_transmission_threshold,
                        target_prob=target_prob,
@@ -152,22 +171,27 @@ def plot_pr_detect_increasing(prevalance_per_100k=1,
                        high_prev_pop_rel_likelihood=high_prev_pop_rel_likelihood,
                        high_prev_testing_proportion=high_prev_testing_proportion)
 
+def simple_exponential_growth(initial_population=1, r_eff=1.5, num_days=28, generation_interval=4.7):
+    daily_multiplier = r_eff ** (1 / generation_interval)
+    prev_list = [initial_population * (daily_multiplier ** day) for day in range(num_days)]
+    return prev_list
 
 if __name__ == '__main__':
     create_single_figures = False
     create_multi_panel_figures = False
     create_multi_panel_figures_with_stratified_testing = False
+    create_multi_panel_time_to_detection_figures = False
 
-    fig, axs = plt.subplots(2,1)
-    plt.axes(axs[0])
-    plot_pr_detect_vary_test(tests=4, prevalance_per_100k=2)
-    plt.title('Prevalence = 2/100k')
-    plt.axes(axs[1])
-    plot_pr_detect_vary_test(tests=4, prevalance_per_100k=1)
-    plt.title('Prevalence = 1/100k')
-    plt.savefig('Prob_detect_figures/Consecutive_testing_test_fig.png')
-    plt.show()
-    plt.close()
+    # fig, axs = plt.subplots(2,1)
+    # plt.axes(axs[0])
+    # plot_pr_detect_vary_test(tests=4, prevalance_per_100k=.5)
+    # plt.title('Prevalence = 2/100k')
+    # plt.axes(axs[1])
+    # plot_pr_detect_vary_test(tests=4, prevalance_per_100k=.5, r0=1.5)
+    # plt.title('Prevalence = 2/100k')
+    # # plt.savefig('Prob_detect_figures/Consecutive_testing_test_fig.png')
+    # plt.show()
+    # plt.close()
 
     prev_list = [0.5, 1, 2]
     days_list = [14, 28]
@@ -177,6 +201,30 @@ if __name__ == '__main__':
 
     high_prev_likelihood_list = [5, 10]
     high_prev_test_prop_list = [1/3, 1/2, 2/3]
+
+    if create_multi_panel_time_to_detection_figures:
+        tests_options = 2, 4
+        for tests in tests_options:
+            fig, ax = plt.subplots(len(prev_list), len(reff_list))
+            plt.subplots_adjust(wspace=0.3, hspace=0.3)
+            for prev, prev_index in zip(prev_list, count()):
+                for r0, r0_index in zip(reff_list, count()):
+                    plt.axes(ax[prev_index, r0_index])
+                    plot_pr_detect_vary_test(prevalance_per_100k=prev,
+                                             tests=tests,
+                                             max_consecutive_days=28,
+                                             r0=r0,
+                                             include_plot_labelling=False)
+                    if r0_index == 0:
+                        plt.ylabel(f"Prevalence {prev}")
+                    if prev_index == 0:
+                        plt.title(f'Reff={r0}')
+                    if prev_index == len(prev_list) - 1:
+                        plt.xlabel('Days')
+            plt.savefig(f'Prob_detect_figures/Probability_of_detection_through_'
+                        f'time_with_{tests}_tests.png')
+            plt.close()
+
 
     if create_multi_panel_figures_with_stratified_testing:
         for r0 in reff_list:
