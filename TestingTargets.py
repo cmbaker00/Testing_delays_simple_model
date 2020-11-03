@@ -192,7 +192,7 @@ def calc_probabilities(prevalence_per_100k=1,
 
         prevalance_per_100k = list(prevalance_per_100k)
         num_in_10k_list, num_in_90k_list = population_split(prevalance_per_100k, high_prev_pop_rel_likelihood)
-        pr_detect_10k = np.prod([binom.cdf(0, high_prev_testing_proportion * num_tests * 1000,
+        pr_detect_10k = 1 - np.prod([binom.cdf(0, high_prev_testing_proportion * num_tests * 1000,
                                                 current_prev / 10000)
                                       for current_prev
                                       in num_in_10k_list])
@@ -202,14 +202,41 @@ def calc_probabilities(prevalence_per_100k=1,
                                       for current_prev
                                       in num_in_90k_list])
 
-        pr_detect = [1 - (1 - pr_10k) * (1 - pr_90k) for pr_10k, pr_90k in zip(pr_detect_10k, pr_detect_90k)]
+        pr_detect = 1 - (1 - pr_detect_10k) * (1 - pr_detect_90k)
 
+        return pr_detect
 
 if __name__ == '__main__':
+
     create_single_figures = False
     create_multi_panel_figures = False
-    create_multi_panel_figures_with_stratified_testing = True
+    create_multi_panel_figures_with_stratified_testing = False
     create_multi_panel_time_to_detection_figures = False
+
+    create_tables_commonwealth = False
+
+    if create_tables_commonwealth:
+        # num_test_range = (2, 4, 6, 8, 10)
+        num_test_range = (10, 8, 6, 4, 2)
+        prev_range = (.5, 1, 2)
+        days_range = (14, 28)
+        reff_range = (1, 1.1, 1.5)
+        for days in days_range:
+            for reff in reff_range:
+                data = {}
+                for prev in prev_range:
+                    pr_list = []
+                    for test in num_test_range:
+
+                        pr = calc_probabilities(prevalence_per_100k=prev,
+                                           days_of_no_transmission_threshold=days,
+                                           num_tests=test,
+                                           r0=reff)
+                        pr_list.append(pr)
+                    data[f'Prev = {prev}'] = pr_list
+                pd.DataFrame(data).to_csv(f'Prob_detect_figures/cwth_tables_days{days}_reff{reff}.csv')
+
+        print(pr)
 
     # fig, axs = plt.subplots(2,1)
     # plt.axes(axs[0])
