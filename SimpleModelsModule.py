@@ -183,18 +183,10 @@ class TestOptimisation:
 
     @lru_cache()
     def load_test_delay_data(self):
-        data = pd.read_csv('testing_delay_kretzhcmar_table_2.csv')
-        x = np.arange(0, 11)
-        y = np.arange(0, 8)
-        z = np.zeros([len(y), len(x)])
-        z[:, :4] = np.array(data)[:, 1:5]
-        z[:, -1] = np.array(data)[:, -1]
-
-        rate_decline = z[:, 3] / z[:, 2]
-        for i in range(4, 10):
-            z[:, i] = z[:, i - 1] * rate_decline
-        for i in range(z.shape[0]):
-            z[i, z[i, :] < z[i, -1]] = z[i, -1]
+        data = pd.read_csv('testing_delay_kretzhcmar_table_2_extended.csv')
+        z = np.array(data)[:,1:]
+        x = np.arange(0, z.shape[1])
+        y = np.arange(0, z.shape[0])
         return interp2d(x, y, z)
 
     def test_delay_effect_on_percent_future_infections(self, result_delay=2., swab_delay=1.):
