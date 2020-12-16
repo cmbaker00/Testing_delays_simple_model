@@ -540,53 +540,56 @@ class TestEquivalence:
 
 
 if __name__ == "__main__":
-    print(TestEquivalence(sensitivity=0).expected_reduction())
-    print(TestEquivalence(sensitivity=.5).expected_reduction())
-    print(TestEquivalence(sensitivity=.9).expected_reduction())
-    print(TestEquivalence(sensitivity=1).expected_reduction())
-    print(TestEquivalence(sensitivity=1, tat=5).expected_reduction())
-    tat_values = np.linspace(0,3)
-    sensitivity_values = np.linspace(0.5, 1)
-    val_array = []
-    for tat in tat_values:
-        val_sens = []
-        for sens in sensitivity_values:
-            val_sens.append(TestEquivalence(sensitivity=sens, tat=tat).expected_reduction()[0])
-        val_array.append(np.array(val_sens))
-    tat_array = np.transpose(np.tile(tat_values, (len(tat_values),1)))
-    sensitivity_array = np.tile(sensitivity_values, (len(sensitivity_values), 1))
-    val_array = np.array(val_array)
+    run_test_equivalence_examples = False
 
-    equiv_array = np.max(val_array)/val_array
+    if run_test_equivalence_examples:
+        print(TestEquivalence(sensitivity=0).expected_reduction())
+        print(TestEquivalence(sensitivity=.5).expected_reduction())
+        print(TestEquivalence(sensitivity=.9).expected_reduction())
+        print(TestEquivalence(sensitivity=1).expected_reduction())
+        print(TestEquivalence(sensitivity=1, tat=5).expected_reduction())
+        tat_values = np.linspace(0,3)
+        sensitivity_values = np.linspace(0.5, 1)
+        val_array = []
+        for tat in tat_values:
+            val_sens = []
+            for sens in sensitivity_values:
+                val_sens.append(TestEquivalence(sensitivity=sens, tat=tat).expected_reduction()[0])
+            val_array.append(np.array(val_sens))
+        tat_array = np.transpose(np.tile(tat_values, (len(tat_values),1)))
+        sensitivity_array = np.tile(sensitivity_values, (len(sensitivity_values), 1))
+        val_array = np.array(val_array)
 
-    from scipy.interpolate import interp2d
+        equiv_array = np.max(val_array)/val_array
 
-    equiv_interp = interp2d(sensitivity_array, tat_array, equiv_array)
-    equiv_table = equiv_interp([.5,.6,.7,.8,.9,1],[0,1,2])
-    equiv_table = equiv_interp([1,.5],[0,1,2])
+        from scipy.interpolate import interp2d
 
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    # ax.view_init(elev=20., azim=150)
-    surf = ax.plot_surface(sensitivity_array,
-                           tat_array,
-                           equiv_array)
-                           # , cmap=cm.coolwarm,
-                           # linewidth=0, antialiased=False)
-    plt.xlabel('Sensitivity')
-    plt.ylabel('Turn around time (days)')
-    plt.title('Test equivalence')
-    plt.savefig('Test_equivalence_init.png')
-    plt.show()
+        equiv_interp = interp2d(sensitivity_array, tat_array, equiv_array)
+        equiv_table = equiv_interp([.5,.6,.7,.8,.9,1],[0,1,2])
+        equiv_table = equiv_interp([1,.5],[0,1,2])
 
-    # test_optim = TestOptimisation(priority_queue=True)
-    # TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000, 1)
-    # # test_optim.create_onward_transmission_array()
-    # # test_optim.plot_benefit_as_function_delay(swab_delay=1)
-    # # print(test_optim.benefit_of_test(0))
-    # # allocation = test_optim.allocate_tests(10000)
-    # # print(test_optim.estimate_transmission_with_testing(0))
-    # test_optim.plot_transmission_with_testing()
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        # ax.view_init(elev=20., azim=150)
+        surf = ax.plot_surface(sensitivity_array,
+                               tat_array,
+                               equiv_array)
+                               # , cmap=cm.coolwarm,
+                               # linewidth=0, antialiased=False)
+        plt.xlabel('Sensitivity')
+        plt.ylabel('Turn around time (days)')
+        plt.title('Test equivalence')
+        # plt.savefig('Test_equivalence_init.png')
+        plt.show()
+
+    test_optim = TestOptimisation(priority_queue=True)
+    TestOptimisation(priority_queue=True).estimate_transmission_with_testing(8000)
+    # test_optim.create_onward_transmission_array()
+    # test_optim.plot_benefit_as_function_delay(swab_delay=1)
+    # print(test_optim.benefit_of_test(0))
+    # allocation = test_optim.allocate_tests(10000)
+    # print(test_optim.estimate_transmission_with_testing(0))
+    test_optim.plot_transmission_with_testing()
 
     # test_optim = TestOptimisation(priority_queue=True)
     # test_optim.optimal_test_uncertain(uncertainty_range_prop=.1)
