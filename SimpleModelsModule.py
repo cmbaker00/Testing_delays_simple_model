@@ -116,7 +116,7 @@ class TestOptimisation:
 
         self.priority_order_indication = test_prioritsation_by_indication
 
-        if not 0 < priority_capacity_proportion < 1:
+        if not 0 <= priority_capacity_proportion < 1:
             raise ValueError(f'Priority capacity proportion must be between '
                              f'0 and 1. The input value was '
                              f'{priority_capacity_proportion}.')
