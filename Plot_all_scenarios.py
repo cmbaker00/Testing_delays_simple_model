@@ -16,7 +16,9 @@ def make_population_tuple(num_close, num_symp, total_pop,
     return (num_close, num_symp*presenting_proporition, num_asymptomatic), expected_cases
 
 
-def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, prop_symp, scenario_name, priority_ordering=None):
+def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, prop_symp, scenario_name, priority_ordering=None, directory_name=None):
+    if directory_name is None:
+        directory_name = 'Onward_transmission_and_postivity_basic_figures'
     test_optim = TestOptimisation(priority_queue=priority, onward_transmission=onward_transmission,
                                   population=pop,
                                   pre_test_probability=pre_prob,
@@ -32,7 +34,7 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
     ax.text(rc * 1.04, 85, 'Routine capacity', rotation=270)
     priority_string = '' if priority else '_no_priority'
     priority_order_string = '' if priority_ordering == None else '_symptomatic_priority'
-    plt.savefig(f'Onward_transmission_and_postivity_basic_figures/{scenario_name}_test_prop_{prop_symp}_cap_{int(cap/100)}'
+    plt.savefig(f'{directory_name}/{scenario_name}_test_prop_{prop_symp}_cap_{int(cap/100)}'
                 f'{priority_string}{priority_order_string}.png')
     plt.close()
     def fill_box(xmin, xmax, col=(0, 0, 0), ymin=50., ymax=100.):
@@ -59,7 +61,7 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
 
             plt.xlabel('Tests per 1000 people')
             plt.ylabel('Percentage of onwards transmission')
-            plt.savefig(f'Onward_transmission_and_postivity_basic_figures/{scenario_name}_test_prop_{prop_symp}_cap_{int(cap / 100)}'
+            plt.savefig(f'{directory_name}/{scenario_name}_test_prop_{prop_symp}_cap_{int(cap / 100)}'
                         f'{priority_string}{priority_order_string}_onward_only.png')
             plt.show()
             plt.close()
@@ -84,7 +86,8 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
 
             plt.show()
             plt.close()
-            # print(1)
+        else:
+            raise ValueError(f'priority_ordering {priority_ordering} is unkown')
 
 if __name__ == '__main__':
 
