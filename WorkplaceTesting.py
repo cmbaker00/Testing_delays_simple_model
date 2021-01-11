@@ -73,6 +73,10 @@ def generate_single_test_schedule(num_people, number_of_times_testing_occurs_per
         test_days = (1, 1, 0, 1, 1, 0, 0)
     if number_of_times_testing_occurs_per_week == 5:
         test_days = (1, 1, 1, 1, 1, 0, 0)
+    if number_of_times_testing_occurs_per_week == 6:
+        test_days = (1, 1, 1, 1, 1, 1, 0)
+    if number_of_times_testing_occurs_per_week == 7:
+        test_days = (1, 1, 1, 1, 1, 1, 1)
     if number_of_times_testing_occurs_per_week is None:
         raise ValueError('Number of times testing per week must be an int from 1 to 5.')
 
@@ -100,10 +104,14 @@ if __name__ == "__main__":
 
     workplace_size_plot = False
     workplace_testing_frequency_plot = False
-    test_sensitivity_plot = True
-    reff_plot = False
+    test_sensitivity_plot = False
+    reff_plot = True
     test_coverage_plot = False
-    hq_plot = True
+
+    hq_plot = False
+    base_sensitivity_frequency_full_coverage_plot = False
+    variable_r0_plot = False
+
     num_tests = [0, 0, 5, 5]
     prev = [1 / 100] * 4
 
@@ -127,6 +135,65 @@ if __name__ == "__main__":
     low_prob_per_week = .25
     high_prob_per_week = 1
 
+
+    if base_sensitivity_frequency_full_coverage_plot:
+
+        prop_list = [7, 3, 1]
+        time_window_list = [7, 14]
+        test_sensitivity_list = list(np.linspace(.4, .99, 30))
+        fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+
+        for time_window, i in zip(time_window_list, count()):
+            pr_list = []
+            for test_proportion in prop_list:
+                pr_sens_list = []
+                for test_sens in test_sensitivity_list:
+                    pr = workplace_detection(50, growth_rate=base_growth_rate,
+                                             number_of_times_testing_occurs_per_week=test_proportion,
+                                             proportion_workplace_tested_per_week=test_proportion,
+                                             time_horizon=time_window,
+                                             test_sensitivity=test_sens)
+                    pr_sens_list.append(pr[1])
+                pr_list.append(pr_sens_list)
+            print(i)
+            axs[i].plot(np.array(test_sensitivity_list), np.array(pr_list).transpose())
+            axs[i].legend(['Daily testing', '3 times per week testing', 'Weekly testing'])
+            axs[i].set_xlabel('Test sensitivity')
+            axs[i].set_ylabel(f'Probability of detection within {time_window} days')
+            axs[i].set_ylim([0.4, 1.05])
+            # plt.title(f'{time_window} day time horizon, Reff = {reff}')
+            # plt.savefig(f'Figures_workplace/HQ_sensitivity_{time_window}day_reff{reff}.png')
+
+        plt.savefig('Figures_workplace/sensitivity_frequency_high_coverage_7_14_days.png')
+        plt.show()
+
+    if variable_r0_plot:
+
+        test_proportion = 1
+        time_window = 7
+        test_sensitivity_list = list(np.linspace(.7, .99, 30))
+        reff_list = [1.1, 1.5, 2, 2.5]
+        for reff in reff_list:
+            pr_list = []
+            for test_sens in test_sensitivity_list:
+                pr = workplace_detection(50, growth_rate=reff,
+                                         number_of_times_testing_occurs_per_week=test_proportion,
+                                         proportion_workplace_tested_per_week=test_proportion,
+                                         time_horizon=time_window,
+                                         test_sensitivity=test_sens)
+                pr_list.append(pr[1])
+            plt.plot(test_sensitivity_list, pr_list)
+        plt.legend([f'Reff={i}' for i in reff_list])
+        plt.ylabel('Probability of detection within 7 days')
+        plt.xlabel('Test sensitivity')
+        plt.title('Probability of detection with weekly testing')
+        plt.savefig('Figures_workplace/prob_detect_varying_reff.png')
+
+        plt.show()
+
+
+
+
     if hq_plot:
         pass
         workplace_detection(base_num_people, growth_rate=base_growth_rate,
@@ -139,36 +206,42 @@ if __name__ == "__main__":
         # proportion_list = [1, 3/4, 1/2, 1/3, 1/4, 1/6, 1/8]
         proportion_list = [i/8 for i in range(1, 9)]
         # proportion_list = list(np.linspace(.1,1,20))
-        pr_list = []
-        for test_proportion in proportion_list:
-            pr = workplace_detection(base_num_people, growth_rate=base_growth_rate,
-                                     number_of_times_testing_occurs_per_week=base_number_test_times,
-                                     proportion_workplace_tested_per_week=test_proportion,
-                                     time_horizon=base_time_horizon,
-                                     test_sensitivity=base_test_sensitivity)
-            pr_list.append(pr[1])
-        plt.plot([i*100 for i in proportion_list], pr_list)
+        test_sensitivity_list = [.95, .85, .75, .65]
+        for test_sensitivity in test_sensitivity_list:
+            pr_list = []
+            for test_proportion in proportion_list:
+                pr = workplace_detection(base_num_people, growth_rate=base_growth_rate,
+                                         number_of_times_testing_occurs_per_week=base_number_test_times,
+                                         proportion_workplace_tested_per_week=test_proportion,
+                                         time_horizon=base_time_horizon,
+                                         test_sensitivity=test_sensitivity)
+                pr_list.append(pr[1])
+            plt.plot([i*100 for i in proportion_list], pr_list)
         plt.xlabel('Percentage of workplace tested each week')
         plt.ylabel('Probability of detection')
         plt.title('Proportion tested per week')
+        plt.legend([f'Test sensitivity: {i}' for i in test_sensitivity_list])
         plt.savefig('Figures_workplace/workplace_prop_vary.png')
         plt.show()
 
 
     if reff_plot:
-        reff_list = list(np.linspace(1, 1.5, 20))
-        pr_list = []
-        for ref in reff_list:
-            pr = workplace_detection(base_num_people, growth_rate=ref,
-                                     number_of_times_testing_occurs_per_week=base_number_test_times,
-                                     proportion_workplace_tested_per_week=base_prop_per_week,
-                                     time_horizon=base_time_horizon,
-                                     test_sensitivity=base_test_sensitivity)
-            pr_list.append(pr[1])
-        plt.plot(reff_list, pr_list)
-        plt.xlabel('R_eff')
+        reff_list = list(np.linspace(1, 2.5, 20))
+        test_sensitivity_list = [.95, .85, .75, .65]
+        for test_sensitivity in test_sensitivity_list:
+            pr_list = []
+            for ref in reff_list:
+                pr = workplace_detection(base_num_people, growth_rate=ref,
+                                         number_of_times_testing_occurs_per_week=base_number_test_times,
+                                         proportion_workplace_tested_per_week=base_prop_per_week,
+                                         time_horizon=base_time_horizon,
+                                         test_sensitivity=test_sensitivity)
+                pr_list.append(pr[1])
+            plt.plot(reff_list, pr_list)
+        plt.xlabel('Reff')
         plt.ylabel('Probability of detection')
         plt.title('Growth rate')
+        plt.legend([f'Test sensitivity: {i}' for i in test_sensitivity_list])
         plt.savefig('Figures_workplace/workplace_reff_vary.png')
         plt.show()
 
@@ -191,11 +264,11 @@ if __name__ == "__main__":
 
         # hotel quarantine
         test_sensitivity_list = list(np.linspace(.05, .99, 10))
-        prop_list = [1, 3, 5]
+        prop_list = [1, 3, 7]
         hq_growth = 1.5
         detection_window_list = [7, 14]
         reff_list = [1, 1.1, 1.5, 2]
-        workplace_size_list = [5, 10, 20, 50]
+        workplace_size_list = [50]
         for reff in reff_list:
             for workplace_size in workplace_size_list:
                 for time_window in detection_window_list:
@@ -214,12 +287,12 @@ if __name__ == "__main__":
                     plt.legend(['Weekly testing', '3 times per week testing', 'Daily testing'])
                     plt.xlabel('Test sensitivity')
                     plt.ylabel(f'Probability of detection within {time_window} days')
-                    plt.title(f'{time_window} day time horizon, Reff = {reff}, Workplace size = {workplace_size}')
-                    plt.savefig(f'Figures_workplace/HQ_sensitivity_{time_window}day_reff{reff}_size{workplace_size}.png')
+                    plt.title(f'{time_window} day time horizon, Reff = {reff}')
+                    plt.savefig(f'Figures_workplace/HQ_sensitivity_{time_window}day_reff{reff}.png')
                     plt.show()
                     plt.close()
     if workplace_testing_frequency_plot:
-        test_freq_list = [1, 2, 3, 4, 5]
+        test_freq_list = list(range(1,8))
         pr_list = []
         pr_list_low = []
         pr_list_high = []
@@ -266,3 +339,8 @@ if __name__ == "__main__":
         plt.title('Probability of detection with varying workplace size')
         plt.savefig('Figures_workplace/workplace_size.png')
         plt.show()
+
+    # prev_df = pd.DataFrame()
+    # for reff in [1.1, 1.5, 2]:
+    #     prev_df[f'Reff = {reff}'] = simple_exponential_growth(1,reff, 14)
+    # prev_df.to_csv('Simple_prev_growth_table.csv')
