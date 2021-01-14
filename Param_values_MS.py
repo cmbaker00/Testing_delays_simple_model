@@ -16,4 +16,5 @@ test_prob_low = (0.02, .0005, 0.000001)
 
 pop_low = (14, 600)
 
-priority_order = [(2,1,3), None]
+# priority_order = [(2,1,3), None]
+priority_order = [None]
