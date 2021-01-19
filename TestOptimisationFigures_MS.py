@@ -13,7 +13,8 @@ if __name__ == "__main__":
     onward_transmission_double_figure = False
     track_trace_impact_figure = False
     positive_percent_impact_figure = False
-    supplement_pos_perc_figures = True
+    supplement_pos_perc_figures = False
+    supplement_figure_non_quadratic = True
 
     base_figure_directory = 'MS_figures'
 
@@ -414,6 +415,107 @@ if __name__ == "__main__":
                     # axs[axs_current].set
                     # axs[axs_current].plot([capacity_value/100]*2, [0, 45],'--r')
                     plt.savefig(f'{base_figure_directory}/Supplement_figures/Cases_identified_transmission_{scenario}_capacity{capacity_value}_sympprop_{symp_prop_value}.png')
+                    # plt.show()
+
+
+    if supplement_figure_non_quadratic:
+        total_population = scenario.total_population
+
+        # High prevelance
+        onward_transmission_vector_high = \
+            Plot_all_scenarios.make_onward_transmission_vector(*scenario.onward_transmission_high)
+
+        test_prob_high = scenario.test_prob_high
+
+        population_high, cases_high = \
+            Plot_all_scenarios.make_population_tuple(num_close=scenario.pop_high[0],
+                                  num_symp=scenario.pop_high[1],
+                                  total_pop=total_population,
+                                  presenting_proporition=1,
+                                  probability_by_indication=test_prob_high)
+
+        print(f'Daily infections = {cases_high}')
+
+        # Low prevelance
+        onward_transmission_vector_low = \
+            Plot_all_scenarios.make_onward_transmission_vector(*scenario.onward_transmission_low)
+
+        test_prob_low = scenario.test_prob_low
+
+        population_low, cases_low = \
+            Plot_all_scenarios.make_population_tuple(num_close=scenario.pop_low[0],
+                                  num_symp=scenario.pop_low[1],
+                                  total_pop=total_population,
+                                  presenting_proporition=1,
+                                  probability_by_indication=test_prob_low)
+
+        print(f'Daily infections = {cases_low}')
+
+        # priority_values = [True, False]
+        priority_values = [False]
+        capacity_values = [scenario.test_capacity_low, scenario.test_capacity_high]
+        # symp_prop_values = [.5, 1]
+        symp_prop_values = [.25, .5, .75]
+        scenario_names = ['Low_prev', 'High_prev']
+        situation_dict = {'Low_prev': {'onward': onward_transmission_vector_low,
+                                       'pop': population_low,
+                                       'pre_prob': test_prob_low},
+                          'High_prev': {'onward': onward_transmission_vector_high,
+                                       'pop': population_high,
+                                       'pre_prob': test_prob_high}
+                          }
+        priority_allocation_options = scenario.priority_order
+        tat_function_list = ['quadratic', 'linear', 'exponential']
+        priority_value = priority_values[0]
+        priority_order = priority_allocation_options[0]
+        for capacity_value in capacity_values:
+            for scenario in scenario_names:
+                fig, axs = plt.subplots(1, 3, figsize=(14,8))
+                scenario_plot_name = None
+                if scenario == 'Low_prev':
+                    scenario_plot_name = 'Outbreak response'
+                if scenario == 'High_prev':
+                    scenario_plot_name = 'Community transmission'
+                counter = itertools.count()
+                for tat_function in tat_function_list:
+                    c_dict = situation_dict[scenario]
+                    test_optim = TestOptimisation(priority_queue=priority_value,
+                                                  onward_transmission=c_dict['onward'],
+                                                  population=c_dict['pop'],
+                                                  pre_test_probability=c_dict['pre_prob'],
+                                                  routine_capacity=capacity_value,
+                                                  symptomatic_testing_proportion=.5,
+                                                  test_prioritsation_by_indication=priority_order,
+                                                  tat_function=tat_function)
+
+                    test_array, transmission_array, positive_array = \
+                        test_optim.generate_onward_transmission_with_tests(max_tests_proportion=1000/capacity_value)
+                    test_nparray = np.array(test_array)/100
+
+                    c = next(counter)
+                    axs[c].set_title(f'{scenario_plot_name} scenario\ntest capacity = {capacity_value/100}, TAT function: {tat_function}')
+                    color = 'tab:blue'
+                    color = [0,0,.6]
+                    axs[c].plot(test_nparray, 100*transmission_array/max(transmission_array), color=color)
+                    if c == 0:
+                        axs[c].set_ylabel('Percentage of onwards transmission', color=color)
+                    axs[c].set_xlabel('Number of tests per 1000')
+
+                    # min_transmission_tests = test_nparray[np.where(transmission_array==min(transmission_array))]
+                    # ax1.plot([min_transmission_tests]*2, [80,100],'k--')
+
+                    # ax2 = ax1.twinx()
+                    # color = [.25, .4, 0]
+                    # ax2.plot([i/100 for i in test_array], 100*positive_array*np.array(test_array)/cases_high, color=color)
+                    # ax2.set_ylabel('Percentage of infections identified', color=color)
+
+                    # fig.tight_layout()
+                    # plt.xlabel('Number of tests per 1000')
+                    # plt.ylabel('Percentage reduction through contact tracing')
+                    # plt.legend(['Routine capacity 2 per 1000', 'Routine capacity 4 per 1000'])
+                    # axs[axs_current].set
+                    # axs[axs_current].plot([capacity_value/100]*2, [0, 45],'--r')
+                plt.savefig(f'{base_figure_directory}/Supplement_figures/tat_function/Cases_identified_transmission_{scenario}_capacity{capacity_value}_tatfun_{tat_function}.png')
                     # plt.show()
 
 

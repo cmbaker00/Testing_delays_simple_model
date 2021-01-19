@@ -96,7 +96,8 @@ class TestOptimisation:
                  tat_at_fifty_percent_surge=2,
                  swab_delay=1,
                  symptomatic_testing_proportion=1.,
-                 test_prioritsation_by_indication=None
+                 test_prioritsation_by_indication=None,
+                 tat_function='quadratic'
                  ):
         self.population = population
         self.close_contact, self.symptomatic, self.asymptomatic = population
@@ -115,6 +116,8 @@ class TestOptimisation:
         self.symptomatic_test_proportion = symptomatic_testing_proportion
 
         self.priority_order_indication = test_prioritsation_by_indication
+
+        self.tat_function = tat_function
 
         if not 0 <= priority_capacity_proportion < 1:
             raise ValueError(f'Priority capacity proportion must be between '
@@ -144,7 +147,12 @@ class TestOptimisation:
         # self.pre_test_by_indication = (cc_prob, symp_prob, asymp_prob)
 
     def turn_around_time(self, tests, priority_queue=False):
-        return self.function_turn_around_time(priority_queue)(tests)
+        if self.tat_function == 'quadratic':
+            return self.function_turn_around_time(priority_queue)(tests)
+        if self.tat_function == 'linear':
+            return self.function_turn_around_time_linear(priority_queue)(tests)
+        if self.tat_function == 'exponential':
+            return self.function_turn_around_time_exp(priority_queue)(tests)
 
     def plot_turn_around_time(self, title=None):
         tests = np.arange(self.routine_capacity * 2)
@@ -180,6 +188,28 @@ class TestOptimisation:
         return lambda x: tat if x < routine_capacity else \
             tat + (tat_surge - tat) * ((x - routine_capacity) ** 2) / \
             ((routine_capacity * .5) ** 2)
+
+    @lru_cache()
+    def function_turn_around_time_linear(self, priority_queue=False):
+        routine_capacity = self.routine_capacity
+        tat = self.routine_tat
+        if priority_queue:
+            tat_surge = tat
+        else:
+            tat_surge = self.tat_surge
+        return lambda x: tat if x < routine_capacity else \
+            tat + (tat_surge - tat) * 2 * (x - routine_capacity)/routine_capacity
+
+    @lru_cache()
+    def function_turn_around_time_exp(self, priority_queue=False):
+        routine_capacity = self.routine_capacity
+        tat = self.routine_tat
+        if priority_queue:
+            tat_surge = tat
+        else:
+            tat_surge = self.tat_surge
+        return lambda x: tat if x < routine_capacity else \
+            tat + (tat_surge - tat) * (np.exp((x - routine_capacity)/routine_capacity) - 1) / (np.exp(.5) - 1)
 
     @lru_cache()
     def load_test_delay_data(self):
