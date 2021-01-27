@@ -542,30 +542,26 @@ def run_analysis_save_plot(priority, onward_transmission, pop, pre_prob, cap, pr
             raise ValueError(f'priority_ordering {priority_ordering} is unkown')
 
 
-total_population = 100000
-
-#testing capacity
-test_capacity_high = 400
-test_capacity_low = 200
-
-# High prevelance
-onward_transmission_high = (0.25,  1.25, 1.25)
-test_prob_high = (0.02, .005, 0.00001)
-pop_high = (140, 600)
-
-
-# Low prevelance
-onward_transmission_low = (0.75, 1.5, 1.5)
-test_prob_low = (0.02, .0005, 0.000001)
-
-pop_low = (14, 600)
-
-# priority_order = [(2,1,3), None]
-priority_order = [None]
-
 if __name__ == "__main__":
 
-    total_population = total_population
+    #### PARAMETER VALUES - GENERAL DEFINITIONS ####
+
+    capacity_values = [200, 400] #Test capacity options
+    symp_prop_values = [.5, .75] #Proportion of symptomatic people presenting for testing
+
+    total_population = 100000
+
+    # TABLE 1
+    pop_low = (14, 600)
+    pop_high = (140, 600)
+
+    # TABLE 2
+    test_prob_low = (0.02, .0005, 0.000001)
+    test_prob_high = (0.02, .005, 0.00001)
+
+    # TABLE 3
+    onward_transmission_low = (0.75, 1.5, 1.5)
+    onward_transmission_high = (0.25, 1.25, 1.25)
 
     # High prevelance
     onward_transmission_vector_high = \
@@ -597,38 +593,39 @@ if __name__ == "__main__":
 
     print(f'Daily infections = {cases_low}')
 
-    # priority_values = [True, False]
-    priority_values = [False]
-    capacity_values = [test_capacity_low, test_capacity_high]
-    # symp_prop_values = [.5, 1]
-    symp_prop_values = [.5]
-    scenario_names = ['Low_prev', 'High_prev']
-    situation_dict = {'Low_prev': {'onward': onward_transmission_vector_low,
+
+    population_scenario_names = ['Low_prev', 'High_prev']
+
+    population_scenario_dict = {'Low_prev': {'onward': onward_transmission_vector_low,
                                    'pop': population_low,
                                    'pre_prob': test_prob_low},
                       'High_prev': {'onward': onward_transmission_vector_high,
                                    'pop': population_high,
                                    'pre_prob': test_prob_high}
-                      }
-    priority_allocation_options = priority_order
+                                }
 
-    axs_count = itertools.count()
-    for priority_value in priority_values:
-        for priority_order in priority_allocation_options:
-            for capacity_value in capacity_values:
-                for symp_prop_value in symp_prop_values:
 
-                    axs_current = next(axs_count)
-                    for scenario in scenario_names:
-                        c_dict = situation_dict[scenario]
+    for capacity_value in capacity_values:
+        for symp_prop_value in symp_prop_values:
+            for population_scenario in population_scenario_names:
+                print(f'Running {population_scenario} scenario with:\n'
+                      f'Test capacity of {capacity_value} and symptomatic presenting proportion {symp_prop_value}.\n')
+                c_dict = population_scenario_dict[population_scenario]
 
-                        test_optim = TestOptimisation(priority_queue=priority_value,
-                                                      onward_transmission=c_dict['onward'],
-                                                      population=c_dict['pop'],
-                                                      pre_test_probability=c_dict['pre_prob'],
-                                                      routine_capacity=capacity_value,
-                                                      symptomatic_testing_proportion=symp_prop_value,
-                                                      test_prioritsation_by_indication=priority_order)
-                        data_output = \
-                            test_optim.generate_onward_transmission_with_tests(max_tests_proportion=1000/capacity_value)
-                        pd.DataFrame(data_output).to_csv('test_data_output.csv')
+                test_optim = TestOptimisation(priority_queue=False,
+                                              onward_transmission=c_dict['onward'],
+                                              population=c_dict['pop'],
+                                              pre_test_probability=c_dict['pre_prob'],
+                                              routine_capacity=capacity_value,
+                                              symptomatic_testing_proportion=symp_prop_value,
+                                              test_prioritsation_by_indication=None)
+                data_output = \
+                    test_optim.generate_onward_transmission_with_tests(max_tests_proportion=1000/capacity_value)
+                output_df = pd.DataFrame(data_output)
+                output_df = output_df.transpose()
+                output_df.columns = ['Number of tests', 'Onwards transmission', 'Percentage of tests that are positive']
+                # print(output_df)
+                save_name = f'{population_scenario}_testcapacity_{capacity_value}_sympprop_{symp_prop_value}.csv'
+                print(f'Saving as: {save_name}')
+                output_df.to_csv(save_name, index=False)
+                print('\n----------')
