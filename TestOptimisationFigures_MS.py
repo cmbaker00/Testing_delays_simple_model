@@ -8,13 +8,13 @@ import itertools
 
 if __name__ == "__main__":
     test_figure_area = False
-    tat_figure = False
+    tat_figure = True
     kretzschmar_figure = False
     onward_transmission_double_figure = False
     track_trace_impact_figure = False
     positive_percent_impact_figure = False
     supplement_pos_perc_figures = False
-    supplement_figure_non_quadratic = True
+    supplement_figure_non_quadratic = False
 
     base_figure_directory = 'MS_figures'
 
@@ -555,8 +555,8 @@ if __name__ == "__main__":
         test_optim.plot_transmission_with_testing()
 
     if tat_figure:
-        tat_list = [[1, 5],
-                    [4, 6]]
+        tat_list = [[1, 2],
+                    [2, 4]]
         test_optim_1 = TestOptimisation(routine_tat=tat_list[0][0],
                                       tat_at_fifty_percent_surge=tat_list[0][1],
                                       routine_capacity=100)
@@ -569,12 +569,12 @@ if __name__ == "__main__":
         test_optim_1.plot_turn_around_time()
         test_optim_2.plot_turn_around_time()
 
-        plt.plot([100, 100], [0.3, 12], 'r--')
+        plt.plot([100, 100], [0.3, 7.5], 'r--')
 
         plt.legend([f'Routine TAT = {rtat}, TAT at 50% surge = {stat}'
                     for rtat, stat in tat_list] +
                    ['Routine capacity = 100'])
-        plt.ylim([0, 16])
+        plt.ylim([0, 10])
         plt.xlim([0, 200])
         plt.savefig('MS_figures/TAT_figure.png')
         plt.show()
