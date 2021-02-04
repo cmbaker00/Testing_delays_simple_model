@@ -546,7 +546,7 @@ if __name__ == "__main__":
 
     #### PARAMETER VALUES - GENERAL DEFINITIONS ####
 
-    capacity_values = [200, 400] #Test capacity options
+    capacity_values = [100, 200, 300, 400] #Test capacity options
     symp_prop_values = [.5, .75] #Proportion of symptomatic people presenting for testing
 
     total_population = 100000
